@@ -1,0 +1,31 @@
+mutation AddNewCategory($name: String!, $description: String) @auth(level: USER) {
+  category_insert(data: {name: $name, description: $description})
+}
+
+query ListAllProducts @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  products {
+    id
+    name
+    description
+    price
+    stockQuantity
+    category {
+      id
+      name
+    }
+  }
+}
+
+mutation UpdateProductStock($id: UUID!, $stockQuantity: Int!) @auth(level: USER) {
+  product_update(key: {id: $id}, data: {stockQuantity: $stockQuantity})
+}
+
+query GetUserOrders @auth(level: USER) {
+  orders(where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    orderDate
+    totalAmount
+    status
+    deliveryAddress
+  }
+}

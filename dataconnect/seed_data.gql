@@ -1,0 +1,62 @@
+mutation CreateDemoData @transaction @auth(level: PUBLIC, insecureReason: "This mutation is for seeding demo data and does not require authentication") {
+  category_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      name: "Produce",
+      description: "Fresh fruits and vegetables"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      name: "Dairy & Eggs",
+      description: "Milk, cheese, yogurt, and eggs"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      name: "Meat & Seafood",
+      description: "Beef, chicken, pork, and fish"
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440003",
+      name: "Pantry",
+      description: "Canned goods, pasta, and rice"
+    }
+  ])
+  product_insertMany(data: [
+    {
+      id: "650e8400-e29b-41d4-a716-446655440000",
+      categoryId: "550e8400-e29b-41d4-a716-446655440000",
+      name: "Apples",
+      description: "Fuji apples",
+      imageUrl: "https://example.com/apples.jpg",
+      price: 1.99,
+      stockQuantity: 100
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440001",
+      categoryId: "550e8400-e29b-41d4-a716-446655440001",
+      name: "Milk",
+      description: "Whole milk",
+      imageUrl: "https://example.com/milk.jpg",
+      price: 2.49,
+      stockQuantity: 50
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440002",
+      categoryId: "550e8400-e29b-41d4-a716-446655440002",
+      name: "Chicken Breast",
+      description: "Boneless, skinless chicken breast",
+      imageUrl: "https://example.com/chicken.jpg",
+      price: 5.99,
+      stockQuantity: 30
+    },
+    {
+      id: "650e8400-e29b-41d4-a716-446655440003",
+      categoryId: "550e8400-e29b-41d4-a716-446655440003",
+      name: "Pasta",
+      description: "Spaghetti",
+      imageUrl: "https://example.com/pasta.jpg",
+      price: 0.99,
+      stockQuantity: 100
+    }
+  ])
+}
