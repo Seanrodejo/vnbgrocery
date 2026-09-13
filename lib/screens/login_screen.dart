@@ -1,6 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // REQUIRED
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,8 +17,32 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
-  
-  bool _keepSignedIn = true; 
+
+  bool _keepSignedIn = true;
+  bool _obscurePassword = true;
+
+  // CLAYMORPHISM COLORS (Candy Palette)
+  final Color _canvas = const Color(0xFFF4F1FA);
+  final Color _primaryViolet = const Color(0xFF7C3AED);
+  final Color _primaryVioletLight = const Color(0xFFA78BFA);
+  final Color _hotPink = const Color(0xFFDB2777);
+  final Color _secondaryOrange = const Color(0xFFFF9D42);
+  final Color _darkText = const Color(0xFF332F3A);
+  final Color _mutedText = const Color(0xFF635F69);
+
+  // CLAYMORPHISM SHADOWS
+  List<BoxShadow> get _clayCardShadow => [
+    BoxShadow(
+      color: const Color(0xFFA096B4).withOpacity(0.2),
+      blurRadius: 32,
+      offset: const Offset(16, 16),
+    ),
+    const BoxShadow(
+      color: Colors.white,
+      blurRadius: 24,
+      offset: Offset(-10, -10),
+    ),
+  ];
 
   void _login() async {
     setState(() => _isLoading = true);
@@ -25,255 +51,625 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      if (mounted) context.go('/'); 
+      if (mounted) context.go('/');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login Failed: ${e.toString()}")),
+        SnackBar(
+          content: Text(
+            "Login Failed: ${e.toString()}",
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // --- NEW: FORGOT PASSWORD DIALOG ---
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController();
-    final primaryColor = const Color(0xFFEE4D2D); // ADDED: Brand Color
-    
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)), // ADDED: Premium rounded dialog
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.transparent, // ADDED: Prevents Material 3 purple tint
-        title: const Text("Reset Password", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 20)), // ADDED: Bolder title
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              "Enter your email address and we'll send you a link to reset your password.",
-              style: TextStyle(color: Colors.grey.shade600, height: 1.4), // ADDED: Better line height and color
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 420,
+            padding: const EdgeInsets.all(40),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: _clayCardShadow,
             ),
-            const SizedBox(height: 24), // ADDED: More spacing
-            TextField(
-              controller: resetEmailController,
-              decoration: InputDecoration( // ADDED: Upgraded Input Decoration to match app theme
-                labelText: "Email Address", 
-                prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: _primaryViolet.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.lock_reset_rounded,
+                    size: 48,
+                    color: _primaryViolet,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "Reset Password",
+                  style: GoogleFonts.nunito(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 28,
+                    color: _darkText,
+                    letterSpacing: -0.5,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  "Enter your email address and we'll send you a link to reset your password.",
+                  style: GoogleFonts.dmSans(
+                    color: _mutedText,
+                    height: 1.5,
+                    fontSize: 15,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEAE5F0),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.black.withOpacity(0.03),
+                      width: 2,
+                    ),
+                  ),
+                  child: TextField(
+                    controller: resetEmailController,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 16,
+                      color: _darkText,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: "Email Address",
+                      prefixIcon: Icon(
+                        Icons.email_rounded,
+                        color: _primaryViolet,
+                        size: 22,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 18,
+                      ),
+                      labelStyle: GoogleFonts.dmSans(color: _mutedText),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          height: 56,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                              width: 2,
+                            ),
+                          ),
+                          child: Text(
+                            "Cancel",
+                            style: GoogleFonts.nunito(
+                              color: _darkText,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ClaySquishButton(
+                        label: "Send Link",
+                        primaryColor: _primaryViolet,
+                        onPressed: () async {
+                          if (resetEmailController.text.isEmpty) return;
+                          try {
+                            await FirebaseAuth.instance.sendPasswordResetEmail(
+                              email: resetEmailController.text.trim(),
+                            );
+                            if (mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Reset link sent! Check your email.",
+                                    style: GoogleFonts.dmSans(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  backgroundColor: const Color(0xFF10B981),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    "Error: ${e.toString()}",
+                                    style: GoogleFonts.dmSans(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.redAccent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        actionsPadding: const EdgeInsets.only(right: 24, bottom: 24, left: 24), // ADDED: Better action padding
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // ADDED: Better tap target
-            ),
-            child: const Text("Cancel", style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (resetEmailController.text.isEmpty) return;
-              try {
-                // Firebase built-in reset function
-                await FirebaseAuth.instance.sendPasswordResetEmail(email: resetEmailController.text.trim());
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Reset link sent! Check your email."), backgroundColor: Colors.green),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 2,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            child: const Text("Send Link", style: TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFFEE4D2D); // ADDED: Standardized Brand Orange
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text("Welcome Back", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)), // ADDED: Bolder title
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black87, // ADDED: Ensure text is dark
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton( // ADDED: Modern back button for easy navigation
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => context.go('/'),
-        ),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 450),
-            child: Container( // ADDED: Wrapped Card in Container for exact shadow control
+      backgroundColor: _canvas,
+      body: Stack(
+        children: [
+          // --- CLAYMORPHISM ANIMATED BLOBS BACKGROUND ---
+          Positioned(
+            top: -100,
+            left: -100,
+            child: Container(
+              width: 500,
+              height: 500,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 24, spreadRadius: 4, offset: const Offset(0, 8)) // ADDED: Premium dispersed shadow
-                ]
+                color: _primaryVioletLight.withOpacity(0.2),
+                shape: BoxShape.circle,
               ),
-              child: Card(
-                elevation: 0, // ADDED: Disabled default card elevation to use custom shadow above
-                color: Colors.white,
-                margin: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(20), // ADDED: Larger padding for the icon
-                        decoration: BoxDecoration(
-                          color: primaryColor.withOpacity(0.08), // ADDED: Switched to main brand color
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.person_outline, size: 64, color: primaryColor), // ADDED: Switched to main brand color
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        "Login to Your Account",
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: Color(0xFF2D3436), letterSpacing: -0.5), // ADDED: Tighter, bolder heading
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Access your orders and discounts",
-                        style: TextStyle(color: Colors.grey[500], fontSize: 14, fontWeight: FontWeight.w500), // ADDED: Better subtitle styling
-                      ),
-                      const SizedBox(height: 32),
-                      
-                      TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration( // ADDED: Upgraded Input Decoration
-                          labelText: "Email Address",
-                          prefixIcon: Icon(Icons.email_outlined, color: Colors.grey.shade600),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18), // ADDED: Taller input fields
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: InputDecoration( // ADDED: Upgraded Input Decoration
-                          labelText: "Password",
-                          prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
-                          filled: true,
-                          fillColor: Colors.grey.shade50,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade200)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primaryColor)),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18), // ADDED: Taller input fields
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      
-                      Row(
-                        children: [
-                          SizedBox( // ADDED: Constrained checkbox size
-                            height: 24,
-                            width: 24,
-                            child: Checkbox(
-                              value: _keepSignedIn,
-                              activeColor: primaryColor, // ADDED: Matched brand color
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)), // ADDED: Rounded checkbox
-                              onChanged: (val) => setState(() => _keepSignedIn = val!),
-                            ),
+            ),
+          ),
+          Positioned(
+            bottom: -150,
+            right: -50,
+            child: Container(
+              width: 600,
+              height: 600,
+              decoration: BoxDecoration(
+                color: _hotPink.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+              child: Container(color: Colors.transparent),
+            ),
+          ),
+
+          // --- MAIN LOGIN CARD ---
+          Center(
+            // FIXED: Binalot ng SingleChildScrollView para hindi mag-overflow
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 50 * (1 - value)),
+                    child: Opacity(opacity: value, child: child),
+                  );
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
+                  child: Container(
+                    margin: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 0),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.85),
+                      borderRadius: BorderRadius.circular(48), // Super rounded
+                      boxShadow: _clayCardShadow,
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(48),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                        child: Padding(
+                          padding: EdgeInsets.all(isMobile ? 32.0 : 48.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // BRANDING
+                              RichText(
+                                textAlign: TextAlign.center,
+                                text: TextSpan(
+                                  style: GoogleFonts.nunito(
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 26,
+                                    letterSpacing: -0.5,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: 'VN BRIGADE\n',
+                                      style: TextStyle(
+                                        color: _secondaryOrange,
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: 'GROCERIES ',
+                                      style: TextStyle(color: _primaryViolet),
+                                    ),
+                                    TextSpan(
+                                      text: 'PH',
+                                      style: TextStyle(color: _darkText),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+
+                              Text(
+                                "Welcome Back",
+                                style: GoogleFonts.nunito(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  color: _darkText,
+                                  letterSpacing: -1,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Log in to your premium account",
+                                style: GoogleFonts.dmSans(
+                                  color: _mutedText,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+
+                              // EMAIL FIELD
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAE5F0),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.black.withOpacity(0.03),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: _emailController,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 16,
+                                    color: _darkText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText: "Email Address",
+                                    prefixIcon: Icon(
+                                      Icons.email_rounded,
+                                      color: _primaryViolet,
+                                      size: 22,
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 18,
+                                    ),
+                                    labelStyle: GoogleFonts.dmSans(
+                                      color: _mutedText,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // PASSWORD FIELD
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAE5F0),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: Colors.black.withOpacity(0.03),
+                                    width: 2,
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: _passwordController,
+                                  obscureText: _obscurePassword,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 16,
+                                    color: _darkText,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText: "Password",
+                                    prefixIcon: Icon(
+                                      Icons.lock_rounded,
+                                      color: _primaryViolet,
+                                      size: 22,
+                                    ),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off_rounded
+                                            : Icons.visibility_rounded,
+                                        color: _mutedText,
+                                        size: 22,
+                                      ),
+                                      onPressed: () => setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      ),
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 18,
+                                    ),
+                                    labelStyle: GoogleFonts.dmSans(
+                                      color: _mutedText,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // OPTIONS ROW
+                              Row(
+                                children: [
+                                  SizedBox(
+                                    height: 24,
+                                    width: 24,
+                                    child: Checkbox(
+                                      value: _keepSignedIn,
+                                      activeColor: _primaryViolet,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      side: BorderSide(
+                                        color: Colors.grey.shade400,
+                                        width: 2,
+                                      ),
+                                      onChanged: (val) =>
+                                          setState(() => _keepSignedIn = val!),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    "Remember me",
+                                    style: GoogleFonts.dmSans(
+                                      color: _darkText,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: _showForgotPasswordDialog,
+                                    child: Text(
+                                      "Forgot Password?",
+                                      style: GoogleFonts.dmSans(
+                                        color: _primaryViolet,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 48),
+
+                              // LOGIN SQUISH BUTTON
+                              ClaySquishButton(
+                                label: "Log In",
+                                primaryColor: _primaryViolet,
+                                isLoading: _isLoading,
+                                onPressed: _login,
+                              ),
+                              const SizedBox(height: 32),
+
+                              // GUEST & REGISTER LINKS
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "New here? ",
+                                    style: GoogleFonts.dmSans(
+                                      color: _mutedText,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  GestureDetector(
+                                    onTap: () => context.go('/register'),
+                                    child: Text(
+                                      "Create an Account",
+                                      style: GoogleFonts.dmSans(
+                                        color: _secondaryOrange,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              TextButton(
+                                onPressed: () => context.go('/'),
+                                style: TextButton.styleFrom(
+                                  overlayColor: _primaryViolet.withOpacity(0.1),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Continue as Guest",
+                                  style: GoogleFonts.dmSans(
+                                    color: _mutedText,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Text("Keep me signed in", style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w500)), // ADDED: Better font styling
-                          const Spacer(),
-                          
-                          // UPDATED: Now clickable
-                          TextButton(
-                            onPressed: _showForgotPasswordDialog,
-                            style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero), // ADDED: Removes default padding for perfect alignment
-                            child: const Text("Forgot Password?", style: TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13)), // ADDED: Darker, bolder text
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 32), // ADDED: More spacing before button
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56, // ADDED: Taller button
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _login,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor, // ADDED: Matched brand color
-                            foregroundColor: Colors.white,
-                            elevation: 4, // ADDED: Standardized elevation
-                            shadowColor: primaryColor.withOpacity(0.4),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), // ADDED: Smoother button corners
-                          ),
-                          child: _isLoading 
-                              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5)) // ADDED: Sized the loader properly
-                              : const Text("LOGIN SECURELY", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1.0)), // ADDED: Bolder button text
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("New here? ", style: TextStyle(color: Colors.black54)),
-                          GestureDetector(
-                            onTap: () => context.go('/register'),
-                            child: Text(
-                              "Create an Account",
-                              style: TextStyle(color: primaryColor, fontWeight: FontWeight.w800), // ADDED: Matched brand color and made bolder
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16), // ADDED: More spacing
-                      TextButton(
-                        onPressed: () => context.go('/'),
-                        style: TextButton.styleFrom(
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // ADDED: Rounded ripple effect
-                        ),
-                        child: Text("Continue as Guest", style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w600)), // ADDED: Styled text
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- CLAY SQUISH BUTTON WIDGET ---
+class ClaySquishButton extends StatefulWidget {
+  final String label;
+  final Color primaryColor;
+  final bool isLoading;
+  final IconData? icon;
+  final VoidCallback onPressed;
+
+  const ClaySquishButton({
+    super.key,
+    required this.label,
+    required this.primaryColor,
+    this.isLoading = false,
+    this.icon,
+    required this.onPressed,
+  });
+
+  @override
+  State<ClaySquishButton> createState() => _ClaySquishButtonState();
+}
+
+class _ClaySquishButtonState extends State<ClaySquishButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        if (!widget.isLoading) widget.onPressed();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 64,
+        width: double.infinity,
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _isPressed ? 4 : 0, 0)
+          ..scale(_isPressed ? 0.95 : 1.0),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [widget.primaryColor.withOpacity(0.8), widget.primaryColor],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: _isPressed
+              ? [
+                  BoxShadow(
+                    color: widget.primaryColor.withOpacity(0.2),
+                    blurRadius: 10,
+                    offset: const Offset(2, 4),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: widget.primaryColor.withOpacity(0.4),
+                    blurRadius: 24,
+                    offset: const Offset(12, 12),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.5),
+                    blurRadius: 16,
+                    offset: const Offset(-8, -8),
+                  ),
+                ],
+        ),
+        child: Center(
+          child: widget.isLoading
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 3,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (widget.icon != null) ...[
+                      Icon(widget.icon, color: Colors.white, size: 20),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      widget.label,
+                      style: GoogleFonts.nunito(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
