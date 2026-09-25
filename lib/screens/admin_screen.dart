@@ -1418,13 +1418,14 @@ class _AdminScreenState extends State<AdminScreen>
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
+                      reservedSize: 40,
                       getTitlesWidget: (value, meta) {
                         final dayIndex = 6 - value.toInt();
                         final date = DateTime.now().subtract(
                           Duration(days: dayIndex),
                         );
                         return Padding(
-                          padding: const EdgeInsets.only(top: 16.0),
+                          padding: const EdgeInsets.only(top: 12.0),
                           child: Text(
                             DateFormat('E').format(date),
                             style: GoogleFonts.nunito(

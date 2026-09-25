@@ -24,6 +24,7 @@ class _CartScreenState extends State<CartScreen> {
   final _addressController = TextEditingController();
   final _couponController = TextEditingController();
   final FirebaseService _firebaseService = FirebaseService();
+
   bool _isSubmitting = false;
 
   // CLAYMORPHISM COLORS (Candy Palette)
@@ -94,6 +95,7 @@ class _CartScreenState extends State<CartScreen> {
   void _applyCoupon(CartProvider cart) {
     final code = _couponController.text.trim();
     if (code.isEmpty) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -273,6 +275,7 @@ class _CartScreenState extends State<CartScreen> {
           .toList();
 
       final total = cartProvider.totalAmount;
+
       final order = app_order.Order(
         id: '',
         referenceId: _generateReferenceId(),
@@ -293,7 +296,7 @@ class _CartScreenState extends State<CartScreen> {
           .join('\n');
 
       final message =
-          'New Order!\nRef: ${order.referenceId}\n\nItems:\n$itemSummary\n\nTotal: ₱${total.toStringAsFixed(2)}\n\nCustomer: ${order.customerName}\nAddress: ${order.customerAddress}';
+          'New Order!\nRef: ${order.referenceId}\n\nItems:\n$itemSummary\n\nTotal: P${total.toStringAsFixed(2)}\n\nCustomer: ${order.customerName}\nAddress: ${order.customerAddress}';
       final messengerUrl =
           'https://m.me/ruviejoy.tolentino?text=${Uri.encodeComponent(message)}';
 
@@ -411,7 +414,7 @@ class _CartScreenState extends State<CartScreen> {
                                   ),
                                 ),
                                 Text(
-                                  "₱${(item.price * item.quantity).toStringAsFixed(2)}",
+                                  "P${(item.price * item.quantity).toStringAsFixed(2)}",
                                   style: GoogleFonts.nunito(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w900,
@@ -450,7 +453,7 @@ class _CartScreenState extends State<CartScreen> {
                               ),
                             ),
                             Text(
-                              "₱${total.toStringAsFixed(2)}",
+                              "P${total.toStringAsFixed(2)}",
                               style: GoogleFonts.nunito(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 32,
@@ -552,7 +555,7 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ),
         ),
-      ); // FIXED: Dito natin inayos yung sobrang bracket.
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -710,6 +713,7 @@ class _CartScreenState extends State<CartScreen> {
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
     final total = cartProvider.totalAmount;
+
     final isDesktop = MediaQuery.of(context).size.width > 900;
     final isMobile = MediaQuery.of(context).size.width < 600;
 
@@ -847,7 +851,6 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                       ),
                       const SizedBox(height: 80),
-
                       // --- ADDED PROFESSIONAL CLAYMORPHISM FOOTER ---
                       _buildProfessionalFooter(isMobile),
                     ],
@@ -901,7 +904,7 @@ class _CartScreenState extends State<CartScreen> {
                           style: TextStyle(color: _darkText),
                         ),
                         TextSpan(
-                          text: 'GROCERIES ',
+                          text: 'GROCERIES',
                           style: TextStyle(color: _primaryViolet),
                         ),
                       ],
@@ -1126,7 +1129,7 @@ class _CartScreenState extends State<CartScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '₱${item.price.toStringAsFixed(2)}',
+                          'P${item.price.toStringAsFixed(2)}',
                           style: GoogleFonts.nunito(
                             fontSize: 18,
                             fontWeight: FontWeight.w900,
@@ -1214,7 +1217,7 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       const SizedBox(height: 20),
                       Text(
-                        '₱${(item.price * item.quantity).toStringAsFixed(2)}',
+                        'P${(item.price * item.quantity).toStringAsFixed(2)}',
                         style: GoogleFonts.nunito(
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
@@ -1388,7 +1391,7 @@ class _CartScreenState extends State<CartScreen> {
                     style: GoogleFonts.dmSans(color: _mutedText, fontSize: 16),
                   ),
                   Text(
-                    "₱${total.toStringAsFixed(2)}",
+                    "P${total.toStringAsFixed(2)}",
                     style: GoogleFonts.dmSans(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -1430,7 +1433,7 @@ class _CartScreenState extends State<CartScreen> {
                     ),
                   ),
                   Text(
-                    "₱${total.toStringAsFixed(2)}",
+                    "P${total.toStringAsFixed(2)}",
                     style: GoogleFonts.nunito(
                       fontWeight: FontWeight.w900,
                       fontSize: 36,

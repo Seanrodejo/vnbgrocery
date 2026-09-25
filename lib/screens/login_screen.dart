@@ -16,8 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
-  bool _isLoading = false;
 
+  bool _isLoading = false;
   bool _keepSignedIn = true;
   bool _obscurePassword = true;
 
@@ -73,7 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _showForgotPasswordDialog() {
     final resetEmailController = TextEditingController();
-
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.4),
@@ -516,7 +515,16 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 32),
 
-                              // GUEST & REGISTER LINKS
+                              // GUEST BUTTON
+                              ClaySquishButton(
+                                label: "Continue as Guest",
+                                primaryColor: _secondaryOrange,
+                                icon: Icons.person_outline_rounded,
+                                onPressed: () => context.go('/'),
+                              ),
+                              const SizedBox(height: 32),
+
+                              // REGISTER LINK
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -539,24 +547,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                 ],
-                              ),
-                              const SizedBox(height: 24),
-                              TextButton(
-                                onPressed: () => context.go('/'),
-                                style: TextButton.styleFrom(
-                                  overlayColor: _primaryViolet.withOpacity(0.1),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Continue as Guest",
-                                  style: GoogleFonts.dmSans(
-                                    color: _mutedText,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
                               ),
                             ],
                           ),

@@ -873,22 +873,24 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                         shrinkWrap: true,
                                         physics:
                                             const NeverScrollableScrollPhysics(),
+                                        // NA-FIX NA RESPONSIVE GRID LAYOUT:
                                         gridDelegate:
                                             SliverGridDelegateWithFixedCrossAxisCount(
-                                              crossAxisCount: screenWidth < 1100
+                                              crossAxisCount: screenWidth < 600
                                                   ? 2
-                                                  : 4,
-                                              childAspectRatio: isMobile
-                                                  ? 0.50
-                                                  : (screenWidth < 1100
-                                                        ? 0.65
-                                                        : 0.70),
+                                                  : (screenWidth < 1000
+                                                        ? 3
+                                                        : 4),
+                                              childAspectRatio:
+                                                  screenWidth < 600
+                                                  ? 0.65
+                                                  : 0.80,
                                               crossAxisSpacing: isMobile
-                                                  ? 12
+                                                  ? 16
                                                   : 32,
                                               mainAxisSpacing: isMobile
                                                   ? 16
-                                                  : 48,
+                                                  : 32,
                                             ),
                                         itemCount: filteredProducts.length,
                                         itemBuilder: (context, index) {
@@ -1029,9 +1031,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                 ],
               ),
             ),
-
             if (!isMobile) const SizedBox(width: 60),
-
             Expanded(
               flex: isMobile ? 0 : 1,
               child: Container(
