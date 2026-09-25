@@ -28,7 +28,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
   final Color _primaryViolet = const Color(0xFF7C3AED);
   final Color _primaryVioletLight = const Color(0xFFA78BFA);
   final Color _hotPink = const Color(0xFFDB2777);
-  final Color _secondaryOrange = const Color(0xFFFF9D42); // FIXED: Added back
+  final Color _secondaryOrange = const Color(0xFFFF9D42);
   final Color _darkText = const Color(0xFF332F3A);
   final Color _mutedText = const Color(0xFF635F69);
 
@@ -94,10 +94,12 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
             .get();
         if (doc.exists && doc.data() != null) {
           final data = doc.data()!;
-          if (data.containsKey('phone'))
+          if (data.containsKey('phone')) {
             _phoneController.text = data['phone'] ?? '';
-          if (data.containsKey('address'))
+          }
+          if (data.containsKey('address')) {
             _addressController.text = data['address'] ?? '';
+          }
           if (data.containsKey('name') &&
               (_nameController.text.isEmpty ||
                   _nameController.text == 'Customer')) {
@@ -130,6 +132,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
         type: FileType.image,
         allowMultiple: false,
       );
+
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
         if (file.bytes == null) {
@@ -152,7 +155,6 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
 
         const String imgbbApiKey = '23fb97c65be306aef13ed626b935c801';
         final String base64Image = base64Encode(file.bytes!);
-
         final response = await http.post(
           Uri.parse('https://api.imgbb.com/1/upload'),
           body: {'key': imgbbApiKey, 'image': base64Image},
@@ -217,6 +219,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'name': _nameController.text.trim(),
         }, SetOptions(merge: true));
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -234,7 +237,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
         }
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -248,6 +251,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
             ),
           ),
         );
+      }
     } finally {
       if (mounted) setState(() => _isSavingProfile = false);
     }
@@ -263,7 +267,8 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
           'phone': _phoneController.text.trim(),
           'name': _nameController.text.trim(),
         }, SetOptions(merge: true));
-        if (mounted)
+
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -277,9 +282,10 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
               ),
             ),
           );
+        }
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -293,6 +299,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
             ),
           ),
         );
+      }
     } finally {
       if (mounted) setState(() => _isSavingAddress = false);
     }
@@ -389,8 +396,9 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    final isDesktop = MediaQuery.of(context).size.width > 900;
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth > 900;
+    final isMobile = screenWidth < 768;
 
     if (user == null) return Scaffold(backgroundColor: _canvas);
 
@@ -543,47 +551,200 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 80),
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    vertical: 60,
-                    horizontal: isMobile ? 24 : 80,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(60),
-                    ),
-                    boxShadow: _clayCardShadow,
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        "VN BRIGADE GROCERIES © 2026.",
-                        style: GoogleFonts.nunito(
-                          color: _darkText,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Premium Claymorphism Experience",
-                        style: GoogleFonts.dmSans(
-                          color: _mutedText,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+
+                // --- NEW PROFESSIONAL CLAYMORPHISM FOOTER ---
+                _buildProfessionalFooter(isMobile),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // PROFESSIONAL FOOTER WIDGET
+  Widget _buildProfessionalFooter(bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 40 : 60,
+        horizontal: isMobile ? 24 : 80,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(48)),
+        boxShadow: _clayCardShadow,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1400),
+        child: Flex(
+          direction: isMobile ? Axis.vertical : Axis.horizontal,
+          crossAxisAlignment: isMobile
+              ? CrossAxisAlignment.center
+              : CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // BRANDING COLUMN
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Column(
+                crossAxisAlignment: isMobile
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w900,
+                        fontSize: isMobile ? 24 : 32,
+                        letterSpacing: -1,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'VN BRIGADE\n',
+                          style: TextStyle(color: _darkText),
+                        ),
+                        TextSpan(
+                          text: 'GROCERIES ',
+                          style: TextStyle(color: _primaryViolet),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Your premium destination for fresh, high-quality daily essentials. Serving the community with care and excellence.",
+                    textAlign: isMobile ? TextAlign.center : TextAlign.left,
+                    style: GoogleFonts.dmSans(
+                      color: _mutedText,
+                      fontSize: 15,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: isMobile
+                        ? MainAxisAlignment.center
+                        : MainAxisAlignment.start,
+                    children: [
+                      _buildSocialIcon(Icons.facebook_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.camera_alt_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.send_rounded),
+                    ],
+                  ),
+                  if (isMobile) const SizedBox(height: 40),
+                ],
+              ),
+            ),
+
+            if (!isMobile) const SizedBox(width: 60),
+
+            // CONTACT US COLUMN
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Container(
+                padding: EdgeInsets.all(isMobile ? 24 : 32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAE5F0), // Recessed clay look
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.03),
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: isMobile
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Contact Us",
+                      style: GoogleFonts.nunito(
+                        color: _darkText,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildContactRow(Icons.phone_rounded, "09765590309"),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.location_on_rounded,
+                      "Dasmariñas, Cavite, PH",
+                    ),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.email_rounded,
+                      "support@vnbrigade.com",
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialIcon(IconData icon) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFA096B4).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(4, 4),
+          ),
+          const BoxShadow(
+            color: Colors.white,
+            blurRadius: 12,
+            offset: Offset(-4, -4),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: _primaryViolet, size: 20),
+    );
+  }
+
+  Widget _buildContactRow(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(2, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _primaryViolet, size: 16),
+        ),
+        const SizedBox(width: 16),
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.dmSans(
+              color: _darkText,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -849,7 +1010,6 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   ),
                 ),
                 const SizedBox(height: 48),
-
                 Center(
                   child: Stack(
                     clipBehavior: Clip.none,
@@ -920,9 +1080,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 56),
-
                 _buildModernTextField(
                   _nameController,
                   "Full Name",
@@ -936,19 +1094,16 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   isReadOnly: true,
                 ),
                 const SizedBox(height: 32),
-
                 ClaySquishButton(
                   label: "Save Profile",
                   primaryColor: _primaryViolet,
                   isLoading: _isSavingProfile,
                   onPressed: _saveProfile,
                 ),
-
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 56),
                   child: Divider(color: Colors.grey.shade200, thickness: 2),
                 ),
-
                 Text(
                   "Delivery Address",
                   style: GoogleFonts.nunito(
@@ -959,7 +1114,6 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-
                 isMobile
                     ? Column(
                         children: [
@@ -1002,7 +1156,6 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                   Icons.location_on_outlined,
                 ),
                 const SizedBox(height: 32),
-
                 ClaySquishButton(
                   label: "Save Address",
                   primaryColor: _primaryViolet,
@@ -1247,11 +1400,10 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "${DateFormat('MMMM d, yyyy').format(order.createdAt)}  •  ${order.items.length} Products",
+              "${DateFormat('MMMM d, yyyy').format(order.createdAt)} • ${order.items.length} Products",
               style: GoogleFonts.dmSans(color: _mutedText, fontSize: 16),
             ),
             const SizedBox(height: 48),
-
             isMobile
                 ? Column(
                     children: [
@@ -1264,14 +1416,13 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(child: _buildBillingInfo(order)),
+                      const SizedBox(width: 32),
                       Expanded(child: _buildOrderSummaryBox(order)),
                     ],
                   ),
-
             const SizedBox(height: 56),
             _buildFigmaTracker(order.status),
             const SizedBox(height: 56),
-
             Text(
               "ITEMS",
               style: GoogleFonts.nunito(
@@ -1587,6 +1738,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
         .collection('orders')
         .where('userId', isEqualTo: userId)
         .orderBy('createdAt', descending: true);
+
     if (limit != null) query = query.limit(limit);
 
     final isMobile = MediaQuery.of(context).size.width < 600;
@@ -1594,11 +1746,12 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: query.snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting)
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: CircularProgressIndicator(color: _primaryViolet),
           );
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 40),
             child: Center(
@@ -1608,6 +1761,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
               ),
             ),
           );
+        }
 
         return Column(
           children: [
@@ -1681,6 +1835,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                 doc.data() as Map<String, dynamic>,
                 doc.id,
               );
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 padding: EdgeInsets.symmetric(
@@ -1714,14 +1869,26 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                                 style: GoogleFonts.dmSans(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
+                                  color: _darkText,
                                 ),
                               ),
-                              Text(
-                                order.status.toUpperCase(),
-                                style: GoogleFonts.nunito(
-                                  color: _primaryViolet,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _primaryVioletLight.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  order.status.toUpperCase(),
+                                  style: GoogleFonts.nunito(
+                                    color: _primaryViolet,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1,
+                                  ),
                                 ),
                               ),
                             ],
@@ -1864,7 +2031,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
     int currentIndex = steps.indexOf(status.toLowerCase());
     if (currentIndex == -1) currentIndex = 0;
 
-    if (status.toLowerCase() == 'cancelled')
+    if (status.toLowerCase() == 'cancelled') {
       return Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -1882,6 +2049,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
           ),
         ),
       );
+    }
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1915,6 +2083,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
   ) {
     final isCompleted = currentIndex >= stepIndex;
     final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Column(
       children: [
         Container(
@@ -1943,7 +2112,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10,
                     ),
-                  ], // FIXED: Removed inset
+                  ],
             border: Border.all(
               color: isCompleted
                   ? Colors.transparent
@@ -1974,6 +2143,7 @@ class _ClientOrdersScreenState extends State<ClientOrdersScreen> {
   Widget _buildTrackerLine(int stepIndex, int currentIndex) {
     final isCompleted = currentIndex > stepIndex;
     final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Expanded(
       child: Container(
         margin: EdgeInsets.only(bottom: isMobile ? 0 : 36),

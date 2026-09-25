@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../models/order.dart';
 import '../models/product.dart';
 import '../services/firebase_service.dart';
@@ -21,11 +22,14 @@ class AdminScreen extends StatefulWidget {
 class _AdminScreenState extends State<AdminScreen>
     with TickerProviderStateMixin {
   final FirebaseService _firebaseService = FirebaseService();
+
   List<Order> _orders = [];
   List<Product> _products = [];
+
   bool _isLoadingOrders = true;
   bool _isLoadingProducts = true;
   bool _isAuthenticated = false;
+
   final TextEditingController _passwordController = TextEditingController();
   bool _obscureAdminPassword = true;
 
@@ -34,6 +38,7 @@ class _AdminScreenState extends State<AdminScreen>
   final TextEditingController _orderSearchController = TextEditingController();
   final TextEditingController _productSearchController =
       TextEditingController();
+
   String _orderSearchQuery = '';
   String _productSearchQuery = '';
 
@@ -57,6 +62,19 @@ class _AdminScreenState extends State<AdminScreen>
       color: Colors.white,
       blurRadius: 24,
       offset: Offset(-10, -10),
+    ),
+  ];
+
+  List<BoxShadow> get _clayButtonShadow => [
+    BoxShadow(
+      color: _primaryViolet.withOpacity(0.4),
+      blurRadius: 24,
+      offset: const Offset(12, 12),
+    ),
+    BoxShadow(
+      color: Colors.white.withOpacity(0.5),
+      blurRadius: 16,
+      offset: const Offset(-8, -8),
     ),
   ];
 
@@ -219,6 +237,7 @@ class _AdminScreenState extends State<AdminScreen>
         allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
         allowMultiple: false,
       );
+
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
         final fileName =
@@ -231,25 +250,24 @@ class _AdminScreenState extends State<AdminScreen>
           String extension = file.extension ?? 'jpeg';
           final metadata = SettableMetadata(contentType: 'image/$extension');
           await ref.putData(file.bytes!, metadata);
-        }
+          final downloadUrl = await ref.getDownloadURL();
+          controller.text = downloadUrl;
 
-        final downloadUrl = await ref.getDownloadURL();
-        controller.text = downloadUrl;
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Image uploaded successfully!',
-                style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Image uploaded successfully!',
+                  style: GoogleFonts.dmSans(fontWeight: FontWeight.bold),
+                ),
+                backgroundColor: const Color(0xFF10B981),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-              backgroundColor: const Color(0xFF10B981),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-          );
+            );
+          }
         }
       }
     } catch (e) {
@@ -269,6 +287,7 @@ class _AdminScreenState extends State<AdminScreen>
     String userType = order.userId == 'guest'
         ? 'Guest User'
         : 'Registered Member';
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     showDialog(
       context: context,
@@ -281,7 +300,7 @@ class _AdminScreenState extends State<AdminScreen>
           ),
           backgroundColor: Colors.white.withOpacity(0.95),
           surfaceTintColor: Colors.transparent,
-          contentPadding: const EdgeInsets.all(40),
+          contentPadding: EdgeInsets.all(isMobile ? 24 : 40),
           title: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -289,7 +308,7 @@ class _AdminScreenState extends State<AdminScreen>
                 child: Text(
                   'Order: #${order.referenceId.split('-').last}',
                   style: GoogleFonts.nunito(
-                    fontSize: 28,
+                    fontSize: isMobile ? 20 : 28,
                     fontWeight: FontWeight.w900,
                     color: _darkText,
                     letterSpacing: -0.5,
@@ -327,7 +346,7 @@ class _AdminScreenState extends State<AdminScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(32),
+                    padding: EdgeInsets.all(isMobile ? 20 : 32),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF4F1FA),
                       borderRadius: BorderRadius.circular(32),
@@ -387,7 +406,7 @@ class _AdminScreenState extends State<AdminScreen>
                           Icons.calendar_today_outlined,
                           'Date',
                           DateFormat(
-                            'MMM d, yyyy • h:mm a',
+                            'MMM d, yyyy h:mm a',
                           ).format(order.createdAt),
                         ),
                       ],
@@ -410,78 +429,81 @@ class _AdminScreenState extends State<AdminScreen>
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(
-                          Colors.grey.shade50,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          headingRowColor: WidgetStateProperty.all(
+                            Colors.grey.shade50,
+                          ),
+                          dataRowMaxHeight: 80,
+                          columns: [
+                            DataColumn(
+                              label: Text(
+                                'Product',
+                                style: GoogleFonts.nunito(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                  color: _mutedText,
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Price',
+                                style: GoogleFonts.nunito(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                  color: _mutedText,
+                                ),
+                              ),
+                            ),
+                            DataColumn(
+                              label: Text(
+                                'Subtotal',
+                                style: GoogleFonts.nunito(
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 14,
+                                  color: _mutedText,
+                                ),
+                              ),
+                            ),
+                          ],
+                          rows: order.items.map((item) {
+                            final subtotal = item.price * item.quantity;
+                            return DataRow(
+                              cells: [
+                                DataCell(
+                                  Text(
+                                    '${item.productName} (${item.priceType}) x${item.quantity}',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Text(
+                                    '₱${item.price.toStringAsFixed(2)}',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 15,
+                                      color: _mutedText,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Text(
+                                    '₱${subtotal.toStringAsFixed(2)}',
+                                    style: GoogleFonts.nunito(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 16,
+                                      color: _darkText,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
                         ),
-                        dataRowMaxHeight: 80,
-                        columns: [
-                          DataColumn(
-                            label: Text(
-                              'Product',
-                              style: GoogleFonts.nunito(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: _mutedText,
-                              ),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Price',
-                              style: GoogleFonts.nunito(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: _mutedText,
-                              ),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'Subtotal',
-                              style: GoogleFonts.nunito(
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: _mutedText,
-                              ),
-                            ),
-                          ),
-                        ],
-                        rows: order.items.map((item) {
-                          final subtotal = item.price * item.quantity;
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Text(
-                                  '${item.productName} (${item.priceType}) x${item.quantity}',
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  '₱${item.price.toStringAsFixed(2)}',
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 15,
-                                    color: _mutedText,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  '₱${subtotal.toStringAsFixed(2)}',
-                                  style: GoogleFonts.nunito(
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 16,
-                                    color: _darkText,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
                       ),
                     ),
                   ),
@@ -500,7 +522,7 @@ class _AdminScreenState extends State<AdminScreen>
                       Text(
                         '₱${order.total.toStringAsFixed(2)}',
                         style: GoogleFonts.nunito(
-                          fontSize: 36,
+                          fontSize: isMobile ? 24 : 36,
                           fontWeight: FontWeight.w900,
                           color: _primaryViolet,
                           letterSpacing: -1,
@@ -512,7 +534,6 @@ class _AdminScreenState extends State<AdminScreen>
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Divider(thickness: 2),
                   ),
-
                   Text(
                     'Update Order Status',
                     style: GoogleFonts.nunito(
@@ -577,8 +598,9 @@ class _AdminScreenState extends State<AdminScreen>
                                 )
                                 .toList(),
                         onChanged: (newStatus) {
-                          if (newStatus != null)
+                          if (newStatus != null) {
                             _updateStatus(order.id, newStatus);
+                          }
                         },
                       ),
                     ),
@@ -587,7 +609,7 @@ class _AdminScreenState extends State<AdminScreen>
               ),
             ),
           ),
-          actionsPadding: const EdgeInsets.all(40),
+          actionsPadding: EdgeInsets.all(isMobile ? 24 : 40),
           actions: [
             TextButton(
               onPressed: () async {
@@ -664,7 +686,7 @@ class _AdminScreenState extends State<AdminScreen>
             ),
             const SizedBox(width: 16),
             SizedBox(
-              width: 140,
+              width: isMobile ? double.infinity : 140,
               child: ClaySquishButton(
                 label: "Close",
                 primaryColor: _primaryViolet,
@@ -731,8 +753,11 @@ class _AdminScreenState extends State<AdminScreen>
     );
 
     String selectedCategory = product?.category ?? _categories.first;
-    if (selectedCategory.isEmpty || !_categories.contains(selectedCategory))
+    if (selectedCategory.isEmpty || !_categories.contains(selectedCategory)) {
       selectedCategory = _categories.first;
+    }
+
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     showDialog(
       context: context,
@@ -751,7 +776,7 @@ class _AdminScreenState extends State<AdminScreen>
                 product == null ? 'Add New Product' : 'Edit Product',
                 style: GoogleFonts.nunito(
                   fontWeight: FontWeight.w900,
-                  fontSize: 28,
+                  fontSize: isMobile ? 24 : 28,
                   color: _darkText,
                   letterSpacing: -0.5,
                 ),
@@ -769,27 +794,45 @@ class _AdminScreenState extends State<AdminScreen>
                         Icons.inventory_2_rounded,
                       ),
                       const SizedBox(height: 20),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildModernTextField(
-                              marketPriceController,
-                              'Retail Price',
-                              Icons.sell_rounded,
-                              isNumber: true,
+                      isMobile
+                          ? Column(
+                              children: [
+                                _buildModernTextField(
+                                  marketPriceController,
+                                  'Retail Price',
+                                  Icons.sell_rounded,
+                                  isNumber: true,
+                                ),
+                                const SizedBox(height: 20),
+                                _buildModernTextField(
+                                  vnbPriceController,
+                                  'Wholesale Price',
+                                  Icons.storefront_rounded,
+                                  isNumber: true,
+                                ),
+                              ],
+                            )
+                          : Row(
+                              children: [
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    marketPriceController,
+                                    'Retail Price',
+                                    Icons.sell_rounded,
+                                    isNumber: true,
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: _buildModernTextField(
+                                    vnbPriceController,
+                                    'Wholesale Price',
+                                    Icons.storefront_rounded,
+                                    isNumber: true,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 20),
-                          Expanded(
-                            child: _buildModernTextField(
-                              vnbPriceController,
-                              'Wholesale Price',
-                              Icons.storefront_rounded,
-                              isNumber: true,
-                            ),
-                          ),
-                        ],
-                      ),
                       const SizedBox(height: 20),
                       _buildModernTextField(
                         descriptionController,
@@ -908,7 +951,7 @@ class _AdminScreenState extends State<AdminScreen>
                       ),
                       const SizedBox(height: 16),
                       Container(
-                        padding: const EdgeInsets.all(32),
+                        padding: EdgeInsets.all(isMobile ? 20 : 32),
                         decoration: BoxDecoration(
                           color: _secondaryOrange.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(32),
@@ -938,7 +981,7 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
                 ),
               ),
-              actionsPadding: const EdgeInsets.all(40),
+              actionsPadding: EdgeInsets.all(isMobile ? 24 : 40),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -953,7 +996,7 @@ class _AdminScreenState extends State<AdminScreen>
                 ),
                 const SizedBox(width: 16),
                 SizedBox(
-                  width: 200,
+                  width: isMobile ? double.infinity : 200,
                   child: ClaySquishButton(
                     label: "Save Product",
                     primaryColor: _primaryViolet,
@@ -1100,6 +1143,7 @@ class _AdminScreenState extends State<AdminScreen>
   Widget _buildAnalyticsTab() {
     final weeklySales = _weeklySales;
     final categorySales = _salesByCategory;
+    final isMobile = MediaQuery.of(context).size.width < 768;
 
     final List<Color> pieColors = [
       _primaryViolet,
@@ -1113,13 +1157,15 @@ class _AdminScreenState extends State<AdminScreen>
     ];
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(48.0),
+      padding: EdgeInsets.all(isMobile ? 24.0 : 48.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Flex(
+            direction: isMobile ? Axis.vertical : Axis.horizontal,
             children: [
               Expanded(
+                flex: isMobile ? 0 : 1,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1142,7 +1188,7 @@ class _AdminScreenState extends State<AdminScreen>
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(40.0),
+                    padding: EdgeInsets.all(isMobile ? 24.0 : 40.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1177,7 +1223,7 @@ class _AdminScreenState extends State<AdminScreen>
                           '₱${_totalRevenue.toStringAsFixed(2)}',
                           style: GoogleFonts.nunito(
                             color: Colors.white,
-                            fontSize: 48,
+                            fontSize: isMobile ? 36 : 48,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -1,
                           ),
@@ -1187,8 +1233,12 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
                 ),
               ),
-              const SizedBox(width: 40),
+              if (isMobile)
+                const SizedBox(height: 24)
+              else
+                const SizedBox(width: 40),
               Expanded(
+                flex: isMobile ? 0 : 1,
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -1211,7 +1261,7 @@ class _AdminScreenState extends State<AdminScreen>
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(40.0),
+                    padding: EdgeInsets.all(isMobile ? 24.0 : 40.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1246,7 +1296,7 @@ class _AdminScreenState extends State<AdminScreen>
                           '${_orders.length}',
                           style: GoogleFonts.nunito(
                             color: Colors.white,
-                            fontSize: 48,
+                            fontSize: isMobile ? 36 : 48,
                             fontWeight: FontWeight.w900,
                             letterSpacing: -1,
                           ),
@@ -1262,7 +1312,7 @@ class _AdminScreenState extends State<AdminScreen>
           Text(
             'Last 7 Days Sales',
             style: GoogleFonts.nunito(
-              fontSize: 32,
+              fontSize: isMobile ? 24 : 32,
               fontWeight: FontWeight.w900,
               color: _darkText,
               letterSpacing: -1,
@@ -1270,8 +1320,8 @@ class _AdminScreenState extends State<AdminScreen>
           ),
           const SizedBox(height: 32),
           Container(
-            height: 400,
-            padding: const EdgeInsets.all(40),
+            height: isMobile ? 300 : 400,
+            padding: EdgeInsets.all(isMobile ? 20 : 40),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.85),
               borderRadius: BorderRadius.circular(48),
@@ -1308,7 +1358,7 @@ class _AdminScreenState extends State<AdminScreen>
                           child: Text(
                             DateFormat('E').format(date),
                             style: GoogleFonts.nunito(
-                              fontSize: 15,
+                              fontSize: isMobile ? 12 : 15,
                               fontWeight: FontWeight.w900,
                               color: _mutedText,
                             ),
@@ -1326,7 +1376,7 @@ class _AdminScreenState extends State<AdminScreen>
                       BarChartRodData(
                         toY: e.value,
                         color: _primaryViolet,
-                        width: 32,
+                        width: isMobile ? 20 : 32,
                         borderRadius: BorderRadius.circular(12),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
@@ -1345,7 +1395,7 @@ class _AdminScreenState extends State<AdminScreen>
           Text(
             'Sales by Category',
             style: GoogleFonts.nunito(
-              fontSize: 32,
+              fontSize: isMobile ? 24 : 32,
               fontWeight: FontWeight.w900,
               color: _darkText,
               letterSpacing: -1,
@@ -1353,8 +1403,9 @@ class _AdminScreenState extends State<AdminScreen>
           ),
           const SizedBox(height: 32),
           Container(
-            height: 400,
-            padding: const EdgeInsets.all(40),
+            height: isMobile ? double.infinity : 400,
+            constraints: isMobile ? const BoxConstraints(maxHeight: 600) : null,
+            padding: EdgeInsets.all(isMobile ? 24 : 40),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.85),
               borderRadius: BorderRadius.circular(48),
@@ -1371,31 +1422,43 @@ class _AdminScreenState extends State<AdminScreen>
                       ),
                     ),
                   )
-                : Row(
+                : Flex(
+                    direction: isMobile ? Axis.vertical : Axis.horizontal,
                     children: [
                       Expanded(
-                        child: PieChart(
-                          PieChartData(
-                            sectionsSpace: 6,
-                            centerSpaceRadius: 80,
-                            sections: categorySales.entries.map((e) {
-                              final isLarge = e.value > 500;
-                              int index = categorySales.keys.toList().indexOf(
-                                e.key,
-                              );
-                              return PieChartSectionData(
-                                color: pieColors[index % pieColors.length],
-                                value: e.value,
-                                title: '',
-                                radius: isLarge ? 90 : 80,
-                              );
-                            }).toList(),
+                        flex: isMobile ? 0 : 1,
+                        child: SizedBox(
+                          height: isMobile ? 250 : double.infinity,
+                          child: PieChart(
+                            PieChartData(
+                              sectionsSpace: 6,
+                              centerSpaceRadius: isMobile ? 50 : 80,
+                              sections: categorySales.entries.map((e) {
+                                final isLarge = e.value > 500;
+                                int index = categorySales.keys.toList().indexOf(
+                                  e.key,
+                                );
+                                return PieChartSectionData(
+                                  color: pieColors[index % pieColors.length],
+                                  value: e.value,
+                                  title: '',
+                                  radius: isLarge
+                                      ? (isMobile ? 60 : 90)
+                                      : (isMobile ? 50 : 80),
+                                );
+                              }).toList(),
+                            ),
                           ),
                         ),
                       ),
+                      if (isMobile) const SizedBox(height: 32),
                       Expanded(
+                        flex: isMobile ? 0 : 1,
                         child: ListView(
                           shrinkWrap: true,
+                          physics: isMobile
+                              ? const NeverScrollableScrollPhysics()
+                              : null,
                           children: categorySales.entries.map((e) {
                             int index = categorySales.keys.toList().indexOf(
                               e.key,
@@ -1454,13 +1517,197 @@ class _AdminScreenState extends State<AdminScreen>
                   ),
           ),
           const SizedBox(height: 50),
+          _buildProfessionalFooter(isMobile),
         ],
       ),
     );
   }
 
+  Widget _buildProfessionalFooter(bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 40 : 60,
+        horizontal: isMobile ? 24 : 80,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(48)),
+        boxShadow: _clayCardShadow,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1400),
+        child: Flex(
+          direction: isMobile ? Axis.vertical : Axis.horizontal,
+          crossAxisAlignment: isMobile
+              ? CrossAxisAlignment.center
+              : CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Column(
+                crossAxisAlignment: isMobile
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w900,
+                        fontSize: isMobile ? 24 : 32,
+                        letterSpacing: -1,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'VN BRIGADE\n',
+                          style: TextStyle(color: _darkText),
+                        ),
+                        TextSpan(
+                          text: 'GROCERIES ',
+                          style: TextStyle(color: _primaryViolet),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Your premium destination for fresh, high-quality daily essentials. Serving the community with care and excellence.",
+                    textAlign: isMobile ? TextAlign.center : TextAlign.left,
+                    style: GoogleFonts.dmSans(
+                      color: _mutedText,
+                      fontSize: 15,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: isMobile
+                        ? MainAxisAlignment.center
+                        : MainAxisAlignment.start,
+                    children: [
+                      _buildSocialIcon(Icons.facebook_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.camera_alt_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.send_rounded),
+                    ],
+                  ),
+                  if (isMobile) const SizedBox(height: 40),
+                ],
+              ),
+            ),
+            if (!isMobile) const SizedBox(width: 60),
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Container(
+                padding: EdgeInsets.all(isMobile ? 24 : 32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAE5F0),
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.03),
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: isMobile
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Contact Us",
+                      style: GoogleFonts.nunito(
+                        color: _darkText,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildContactRow(Icons.phone_rounded, "09765590309"),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.location_on_rounded,
+                      "Dasmariñas, Cavite, PH",
+                    ),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.email_rounded,
+                      "support@vnbrigade.com",
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialIcon(IconData icon) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFA096B4).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(4, 4),
+          ),
+          const BoxShadow(
+            color: Colors.white,
+            blurRadius: 12,
+            offset: Offset(-4, -4),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: _primaryViolet, size: 20),
+    );
+  }
+
+  Widget _buildContactRow(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(2, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _primaryViolet, size: 16),
+        ),
+        const SizedBox(width: 16),
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.dmSans(
+              color: _darkText,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 768;
+
     if (!_isAuthenticated) {
       return Scaffold(
         backgroundColor: _canvas,
@@ -1500,6 +1747,7 @@ class _AdminScreenState extends State<AdminScreen>
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
                 child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 0),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.85),
                     borderRadius: BorderRadius.circular(48),
@@ -1510,7 +1758,7 @@ class _AdminScreenState extends State<AdminScreen>
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                       child: Padding(
-                        padding: const EdgeInsets.all(48.0),
+                        padding: EdgeInsets.all(isMobile ? 32.0 : 48.0),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -1543,6 +1791,7 @@ class _AdminScreenState extends State<AdminScreen>
                                 color: _mutedText,
                                 fontSize: 16,
                               ),
+                              textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 48),
                             Container(
@@ -1617,147 +1866,246 @@ class _AdminScreenState extends State<AdminScreen>
     final filteredProducts = _products.where((product) {
       return product.name.toLowerCase().contains(_productSearchQuery);
     }).toList();
+
     final filteredOrders = _orders.where((order) {
       return order.referenceId.toLowerCase().contains(_orderSearchQuery);
     }).toList();
 
     return Scaffold(
       backgroundColor: _canvas,
-      body: Row(
-        children: [
-          // --- SAAS SIDEBAR ---
-          Container(
-            width: 320,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
-                  blurRadius: 30,
-                  offset: const Offset(10, 0),
+      // SA MOBILE, GAMIT TAYO NG DRAWER AT APPBAR. SA DESKTOP, ROW GAYA NG DATI.
+      appBar: isMobile
+          ? AppBar(
+              backgroundColor: Colors.white.withOpacity(0.8),
+              elevation: 0,
+              iconTheme: IconThemeData(color: _primaryViolet),
+              title: Text(
+                _currentTab == AdminTab.analytics
+                    ? 'Analytics'
+                    : _currentTab == AdminTab.orders
+                    ? 'Orders'
+                    : 'Products',
+                style: GoogleFonts.nunito(
+                  fontWeight: FontWeight.w900,
+                  color: _darkText,
                 ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 48,
-                    horizontal: 32,
-                  ),
-                  child: RichText(
-                    text: TextSpan(
-                      style: GoogleFonts.nunito(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 24,
-                        letterSpacing: -0.5,
+              ),
+            )
+          : null,
+      drawer: isMobile
+          ? Drawer(
+              backgroundColor: Colors.white,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 48),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 24,
+                      horizontal: 32,
+                    ),
+                    child: RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 24,
+                          letterSpacing: -0.5,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'VNB ',
+                            style: TextStyle(color: _secondaryOrange),
+                          ),
+                          TextSpan(
+                            text: 'ADMIN',
+                            style: TextStyle(color: _primaryViolet),
+                          ),
+                        ],
                       ),
-                      children: [
-                        TextSpan(
-                          text: 'VNB ',
-                          style: TextStyle(color: _secondaryOrange),
-                        ),
-                        TextSpan(
-                          text: 'ADMIN',
-                          style: TextStyle(color: _primaryViolet),
-                        ),
-                      ],
                     ),
                   ),
-                ),
-                _buildSidebarItem(
-                  Icons.analytics_rounded,
-                  'Dashboard Analytics',
-                  AdminTab.analytics,
-                ),
-                _buildSidebarItem(
-                  Icons.receipt_long_rounded,
-                  'Manage Orders',
-                  AdminTab.orders,
-                ),
-                _buildSidebarItem(
-                  Icons.inventory_2_rounded,
-                  'Product Inventory',
-                  AdminTab.products,
-                ),
-                const Spacer(),
-                const Divider(),
-                InkWell(
-                  onTap: () {
-                    setState(() => _isAuthenticated = false);
-                    _passwordController.clear();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(32.0),
+                  _buildSidebarItem(
+                    Icons.analytics_rounded,
+                    'Dashboard Analytics',
+                    AdminTab.analytics,
+                  ),
+                  _buildSidebarItem(
+                    Icons.receipt_long_rounded,
+                    'Manage Orders',
+                    AdminTab.orders,
+                  ),
+                  _buildSidebarItem(
+                    Icons.inventory_2_rounded,
+                    'Product Inventory',
+                    AdminTab.products,
+                  ),
+                  const Spacer(),
+                  const Divider(),
+                  InkWell(
+                    onTap: () {
+                      setState(() => _isAuthenticated = false);
+                      _passwordController.clear();
+                      Navigator.pop(context);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded, color: _hotPink, size: 24),
+                          const SizedBox(width: 16),
+                          Text(
+                            "Log Out",
+                            style: GoogleFonts.dmSans(
+                              color: _hotPink,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : null,
+      body: Row(
+        children: [
+          // --- DESKTOP SAAS SIDEBAR
+          if (!isMobile)
+            Container(
+              width: 320,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 30,
+                    offset: const Offset(10, 0),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 48,
+                      horizontal: 32,
+                    ),
+                    child: RichText(
+                      text: TextSpan(
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 24,
+                          letterSpacing: -0.5,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: 'VNB ',
+                            style: TextStyle(color: _secondaryOrange),
+                          ),
+                          TextSpan(
+                            text: 'ADMIN',
+                            style: TextStyle(color: _primaryViolet),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  _buildSidebarItem(
+                    Icons.analytics_rounded,
+                    'Dashboard Analytics',
+                    AdminTab.analytics,
+                  ),
+                  _buildSidebarItem(
+                    Icons.receipt_long_rounded,
+                    'Manage Orders',
+                    AdminTab.orders,
+                  ),
+                  _buildSidebarItem(
+                    Icons.inventory_2_rounded,
+                    'Product Inventory',
+                    AdminTab.products,
+                  ),
+                  const Spacer(),
+                  const Divider(),
+                  InkWell(
+                    onTap: () {
+                      setState(() => _isAuthenticated = false);
+                      _passwordController.clear();
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded, color: _hotPink, size: 24),
+                          const SizedBox(width: 16),
+                          Text(
+                            "Log Out",
+                            style: GoogleFonts.dmSans(
+                              color: _hotPink,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // --- MAIN CONTENT AREA
+          Expanded(
+            child: Column(
+              children: [
+                if (!isMobile)
+                  Container(
+                    height: 100,
+                    padding: const EdgeInsets.symmetric(horizontal: 48),
+                    decoration: BoxDecoration(
+                      color: _canvas,
+                      border: Border(
+                        bottom: BorderSide(
+                          color: Colors.black.withOpacity(0.05),
+                          width: 2,
+                        ),
+                      ),
+                    ),
                     child: Row(
                       children: [
-                        Icon(Icons.logout_rounded, color: _hotPink, size: 24),
-                        const SizedBox(width: 16),
                         Text(
-                          "Log Out",
-                          style: GoogleFonts.dmSans(
-                            color: _hotPink,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                          _currentTab == AdminTab.analytics
+                              ? 'Analytics Overview'
+                              : _currentTab == AdminTab.orders
+                              ? 'Order Management'
+                              : 'Product Inventory',
+                          style: GoogleFonts.nunito(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            color: _darkText,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: _clayCardShadow,
+                          ),
+                          child: Icon(
+                            Icons.admin_panel_settings_rounded,
+                            color: _primaryViolet,
+                            size: 28,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // --- MAIN CONTENT AREA ---
-          Expanded(
-            child: Column(
-              children: [
-                Container(
-                  height: 100,
-                  padding: const EdgeInsets.symmetric(horizontal: 48),
-                  decoration: BoxDecoration(
-                    color: _canvas,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.black.withOpacity(0.05),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        _currentTab == AdminTab.analytics
-                            ? 'Analytics Overview'
-                            : _currentTab == AdminTab.orders
-                            ? 'Order Management'
-                            : 'Product Inventory',
-                        style: GoogleFonts.nunito(
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          color: _darkText,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: _clayCardShadow,
-                        ),
-                        child: Icon(
-                          Icons.admin_panel_settings_rounded,
-                          color: _primaryViolet,
-                          size: 28,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
 
                 Expanded(
                   child: Stack(
@@ -1799,7 +2147,9 @@ class _AdminScreenState extends State<AdminScreen>
                                 : Column(
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.all(48.0),
+                                        padding: EdgeInsets.all(
+                                          isMobile ? 24.0 : 48.0,
+                                        ),
                                         child: Container(
                                           decoration: BoxDecoration(
                                             color: const Color(0xFFEAE5F0),
@@ -1842,11 +2192,24 @@ class _AdminScreenState extends State<AdminScreen>
                                       ),
                                       Expanded(
                                         child: ListView.builder(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 48,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isMobile ? 24 : 48,
                                           ),
-                                          itemCount: filteredOrders.length,
+                                          itemCount:
+                                              filteredOrders.length +
+                                              1, // +1 FOR FOOTER
                                           itemBuilder: (context, index) {
+                                            if (index ==
+                                                filteredOrders.length) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 40,
+                                                ),
+                                                child: _buildProfessionalFooter(
+                                                  isMobile,
+                                                ),
+                                              );
+                                            }
                                             final order = filteredOrders[index];
                                             return Container(
                                               margin: const EdgeInsets.only(
@@ -1868,102 +2231,127 @@ class _AdminScreenState extends State<AdminScreen>
                                                 borderRadius:
                                                     BorderRadius.circular(32),
                                                 child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    32.0,
+                                                  padding: EdgeInsets.all(
+                                                    isMobile ? 24.0 : 32.0,
                                                   ),
-                                                  child: Row(
+                                                  child: Flex(
+                                                    direction: isMobile
+                                                        ? Axis.vertical
+                                                        : Axis.horizontal,
                                                     children: [
-                                                      Container(
-                                                        padding:
-                                                            const EdgeInsets.all(
-                                                              20,
-                                                            ),
-                                                        decoration: BoxDecoration(
-                                                          color:
-                                                              order.status ==
-                                                                  'delivered'
-                                                              ? Colors
-                                                                    .green
-                                                                    .shade50
-                                                              : order.status ==
-                                                                    'cancelled'
-                                                              ? Colors
-                                                                    .red
-                                                                    .shade50
-                                                              : _secondaryOrange
-                                                                    .withOpacity(
-                                                                      0.1,
-                                                                    ),
-                                                          shape:
-                                                              BoxShape.circle,
-                                                        ),
-                                                        child: Icon(
-                                                          order.status ==
-                                                                  'delivered'
-                                                              ? Icons
-                                                                    .check_circle_outline
-                                                              : order.status ==
-                                                                    'cancelled'
-                                                              ? Icons
-                                                                    .cancel_outlined
-                                                              : Icons
-                                                                    .pending_actions,
-                                                          color:
-                                                              order.status ==
-                                                                  'delivered'
-                                                              ? Colors.green
-                                                              : order.status ==
-                                                                    'cancelled'
-                                                              ? Colors.red
-                                                              : _secondaryOrange,
-                                                          size: 32,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 24),
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                              '#${order.referenceId.split('-').last}',
-                                                              style: GoogleFonts.nunito(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w900,
-                                                                fontSize: 22,
-                                                                color:
-                                                                    _darkText,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(
-                                                              height: 4,
-                                                            ),
-                                                            Text(
-                                                              order
-                                                                  .customerName,
-                                                              style: GoogleFonts.dmSans(
-                                                                color:
-                                                                    _mutedText,
-                                                                fontSize: 16,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .end,
+                                                      Row(
                                                         children: [
-                                                          Text(
-                                                            '₱${order.total.toStringAsFixed(2)}',
-                                                            style:
-                                                                GoogleFonts.nunito(
+                                                          Container(
+                                                            padding:
+                                                                const EdgeInsets.all(
+                                                                  20,
+                                                                ),
+                                                            decoration: BoxDecoration(
+                                                              color:
+                                                                  order.status ==
+                                                                      'delivered'
+                                                                  ? Colors
+                                                                        .green
+                                                                        .shade50
+                                                                  : order.status ==
+                                                                        'cancelled'
+                                                                  ? Colors
+                                                                        .red
+                                                                        .shade50
+                                                                  : _secondaryOrange
+                                                                        .withOpacity(
+                                                                          0.1,
+                                                                        ),
+                                                              shape: BoxShape
+                                                                  .circle,
+                                                            ),
+                                                            child: Icon(
+                                                              order.status ==
+                                                                      'delivered'
+                                                                  ? Icons
+                                                                        .check_circle_outline
+                                                                  : order.status ==
+                                                                        'cancelled'
+                                                                  ? Icons
+                                                                        .cancel_outlined
+                                                                  : Icons
+                                                                        .pending_actions,
+                                                              color:
+                                                                  order.status ==
+                                                                      'delivered'
+                                                                  ? Colors.green
+                                                                  : order.status ==
+                                                                        'cancelled'
+                                                                  ? Colors.red
+                                                                  : _secondaryOrange,
+                                                              size: 32,
+                                                            ),
+                                                          ),
+                                                          const SizedBox(
+                                                            width: 24,
+                                                          ),
+                                                          Expanded(
+                                                            child: Column(
+                                                              crossAxisAlignment:
+                                                                  CrossAxisAlignment
+                                                                      .start,
+                                                              children: [
+                                                                Text(
+                                                                  '#${order.referenceId.split('-').last}',
+                                                                  style: GoogleFonts.nunito(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w900,
+                                                                    fontSize:
+                                                                        22,
+                                                                    color:
+                                                                        _darkText,
+                                                                  ),
+                                                                ),
+                                                                const SizedBox(
+                                                                  height: 4,
+                                                                ),
+                                                                Text(
+                                                                  order
+                                                                      .customerName,
+                                                                  style: GoogleFonts.dmSans(
+                                                                    color:
+                                                                        _mutedText,
+                                                                    fontSize:
+                                                                        16,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                  ),
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                      if (isMobile)
+                                                        const SizedBox(
+                                                          height: 24,
+                                                        ),
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            isMobile
+                                                            ? MainAxisAlignment
+                                                                  .spaceBetween
+                                                            : MainAxisAlignment
+                                                                  .end,
+                                                        children: [
+                                                          Column(
+                                                            crossAxisAlignment:
+                                                                isMobile
+                                                                ? CrossAxisAlignment
+                                                                      .start
+                                                                : CrossAxisAlignment
+                                                                      .end,
+                                                            children: [
+                                                              Text(
+                                                                '₱${order.total.toStringAsFixed(2)}',
+                                                                style: GoogleFonts.nunito(
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w900,
@@ -1971,52 +2359,58 @@ class _AdminScreenState extends State<AdminScreen>
                                                                   color:
                                                                       _darkText,
                                                                 ),
-                                                          ),
-                                                          const SizedBox(
-                                                            height: 12,
-                                                          ),
-                                                          Container(
-                                                            padding:
-                                                                const EdgeInsets.symmetric(
-                                                                  horizontal:
-                                                                      16,
-                                                                  vertical: 6,
-                                                                ),
-                                                            decoration: BoxDecoration(
-                                                              color:
-                                                                  const Color(
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 12,
+                                                              ),
+                                                              Container(
+                                                                padding:
+                                                                    const EdgeInsets.symmetric(
+                                                                      horizontal:
+                                                                          16,
+                                                                      vertical:
+                                                                          6,
+                                                                    ),
+                                                                decoration: BoxDecoration(
+                                                                  color: const Color(
                                                                     0xFFF4F1FA,
                                                                   ),
-                                                              borderRadius:
-                                                                  BorderRadius.circular(
-                                                                    12,
+                                                                  borderRadius:
+                                                                      BorderRadius.circular(
+                                                                        12,
+                                                                      ),
+                                                                ),
+                                                                child: Text(
+                                                                  order.status
+                                                                      .toUpperCase(),
+                                                                  style: GoogleFonts.nunito(
+                                                                    fontSize:
+                                                                        12,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .w900,
+                                                                    color:
+                                                                        _primaryViolet,
+                                                                    letterSpacing:
+                                                                        1.0,
                                                                   ),
-                                                            ),
-                                                            child: Text(
-                                                              order.status
-                                                                  .toUpperCase(),
-                                                              style: GoogleFonts.nunito(
-                                                                fontSize: 12,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w900,
-                                                                color:
-                                                                    _primaryViolet,
-                                                                letterSpacing:
-                                                                    1.0,
+                                                                ),
                                                               ),
+                                                            ],
+                                                          ),
+                                                          if (!isMobile)
+                                                            const SizedBox(
+                                                              width: 32,
                                                             ),
+                                                          Icon(
+                                                            Icons
+                                                                .arrow_forward_ios_rounded,
+                                                            size: 20,
+                                                            color: Colors
+                                                                .grey
+                                                                .shade400,
                                                           ),
                                                         ],
-                                                      ),
-                                                      const SizedBox(width: 32),
-                                                      Icon(
-                                                        Icons
-                                                            .arrow_forward_ios_rounded,
-                                                        size: 20,
-                                                        color: Colors
-                                                            .grey
-                                                            .shade400,
                                                       ),
                                                     ],
                                                   ),
@@ -2037,10 +2431,16 @@ class _AdminScreenState extends State<AdminScreen>
                                 : Column(
                                     children: [
                                       Padding(
-                                        padding: const EdgeInsets.all(48.0),
-                                        child: Row(
+                                        padding: EdgeInsets.all(
+                                          isMobile ? 24.0 : 48.0,
+                                        ),
+                                        child: Flex(
+                                          direction: isMobile
+                                              ? Axis.vertical
+                                              : Axis.horizontal,
                                           children: [
                                             Expanded(
+                                              flex: isMobile ? 0 : 1,
                                               child: Container(
                                                 decoration: BoxDecoration(
                                                   color: const Color(
@@ -2084,9 +2484,14 @@ class _AdminScreenState extends State<AdminScreen>
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 32),
                                             SizedBox(
-                                              width: 240,
+                                              width: isMobile ? 0 : 32,
+                                              height: isMobile ? 24 : 0,
+                                            ),
+                                            SizedBox(
+                                              width: isMobile
+                                                  ? double.infinity
+                                                  : 240,
                                               child: ClaySquishButton(
                                                 label: "Add Product",
                                                 primaryColor: _primaryViolet,
@@ -2100,11 +2505,24 @@ class _AdminScreenState extends State<AdminScreen>
                                       ),
                                       Expanded(
                                         child: ListView.builder(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 48,
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isMobile ? 24 : 48,
                                           ),
-                                          itemCount: filteredProducts.length,
+                                          itemCount:
+                                              filteredProducts.length +
+                                              1, // +1 FOR FOOTER
                                           itemBuilder: (context, index) {
+                                            if (index ==
+                                                filteredProducts.length) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 40,
+                                                ),
+                                                child: _buildProfessionalFooter(
+                                                  isMobile,
+                                                ),
+                                              );
+                                            }
                                             final product =
                                                 filteredProducts[index];
                                             return Container(
@@ -2120,67 +2538,77 @@ class _AdminScreenState extends State<AdminScreen>
                                                 boxShadow: _clayCardShadow,
                                               ),
                                               child: Padding(
-                                                padding: const EdgeInsets.all(
-                                                  24.0,
+                                                padding: EdgeInsets.all(
+                                                  isMobile ? 16.0 : 24.0,
                                                 ),
-                                                child: Row(
+                                                child: Flex(
+                                                  direction: isMobile
+                                                      ? Axis.vertical
+                                                      : Axis.horizontal,
                                                   children: [
-                                                    Container(
-                                                      width: 96,
-                                                      height: 96,
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(
-                                                          0xFFEAE5F0,
-                                                        ),
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              24,
+                                                    Row(
+                                                      children: [
+                                                        Container(
+                                                          width: isMobile
+                                                              ? 80
+                                                              : 96,
+                                                          height: isMobile
+                                                              ? 80
+                                                              : 96,
+                                                          decoration: BoxDecoration(
+                                                            color: const Color(
+                                                              0xFFEAE5F0,
                                                             ),
-                                                      ),
-                                                      child: ClipRRect(
-                                                        borderRadius:
-                                                            BorderRadius.circular(
-                                                              24,
-                                                            ),
-                                                        child:
-                                                            product
-                                                                .imageUrl
-                                                                .isNotEmpty
-                                                            ? Image.network(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  24,
+                                                                ),
+                                                          ),
+                                                          child: ClipRRect(
+                                                            borderRadius:
+                                                                BorderRadius.circular(
+                                                                  24,
+                                                                ),
+                                                            child:
                                                                 product
-                                                                    .imageUrl,
-                                                                fit: BoxFit
-                                                                    .cover,
-                                                                errorBuilder:
-                                                                    (
-                                                                      c,
-                                                                      e,
-                                                                      s,
-                                                                    ) => const Icon(
-                                                                      Icons
-                                                                          .image,
-                                                                      color: Colors
-                                                                          .grey,
-                                                                    ),
-                                                              )
-                                                            : const Icon(
-                                                                Icons.image,
-                                                                color:
-                                                                    Colors.grey,
-                                                              ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 24),
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          Text(
-                                                            product.name,
-                                                            style:
-                                                                GoogleFonts.nunito(
+                                                                    .imageUrl
+                                                                    .isNotEmpty
+                                                                ? Image.network(
+                                                                    product
+                                                                        .imageUrl,
+                                                                    fit: BoxFit
+                                                                        .cover,
+                                                                    errorBuilder:
+                                                                        (
+                                                                          c,
+                                                                          e,
+                                                                          s,
+                                                                        ) => const Icon(
+                                                                          Icons
+                                                                              .image,
+                                                                          color:
+                                                                              Colors.grey,
+                                                                        ),
+                                                                  )
+                                                                : const Icon(
+                                                                    Icons.image,
+                                                                    color: Colors
+                                                                        .grey,
+                                                                  ),
+                                                          ),
+                                                        ),
+                                                        const SizedBox(
+                                                          width: 24,
+                                                        ),
+                                                        Expanded(
+                                                          child: Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .start,
+                                                            children: [
+                                                              Text(
+                                                                product.name,
+                                                                style: GoogleFonts.nunito(
                                                                   fontWeight:
                                                                       FontWeight
                                                                           .w900,
@@ -2188,14 +2616,13 @@ class _AdminScreenState extends State<AdminScreen>
                                                                   color:
                                                                       _darkText,
                                                                 ),
-                                                          ),
-                                                          const SizedBox(
-                                                            height: 6,
-                                                          ),
-                                                          Text(
-                                                            '${product.category} • ₱${product.retailPrice.toStringAsFixed(2)}',
-                                                            style:
-                                                                GoogleFonts.dmSans(
+                                                              ),
+                                                              const SizedBox(
+                                                                height: 6,
+                                                              ),
+                                                              Text(
+                                                                '${product.category} • ₱${product.retailPrice.toStringAsFixed(2)}',
+                                                                style: GoogleFonts.dmSans(
                                                                   color:
                                                                       _mutedText,
                                                                   fontSize: 15,
@@ -2203,34 +2630,48 @@ class _AdminScreenState extends State<AdminScreen>
                                                                       FontWeight
                                                                           .bold,
                                                                 ),
-                                                          ),
-                                                          if (product
-                                                              .couponCode
-                                                              .isNotEmpty)
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets.only(
-                                                                    top: 8.0,
-                                                                  ),
-                                                              child: Text(
-                                                                "Promo: ${product.couponCode} (-₱${product.discountAmount.toStringAsFixed(0)})",
-                                                                style: GoogleFonts.dmSans(
-                                                                  color: const Color(
-                                                                    0xFF10B981,
-                                                                  ),
-                                                                  fontSize: 13,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                ),
                                                               ),
-                                                            ),
-                                                        ],
-                                                      ),
+                                                              if (product
+                                                                  .couponCode
+                                                                  .isNotEmpty)
+                                                                Padding(
+                                                                  padding:
+                                                                      const EdgeInsets.only(
+                                                                        top:
+                                                                            8.0,
+                                                                      ),
+                                                                  child: Text(
+                                                                    "Promo: ${product.couponCode} (- ₱${product.discountAmount.toStringAsFixed(0)})",
+                                                                    style: GoogleFonts.dmSans(
+                                                                      color: const Color(
+                                                                        0xFF10B981,
+                                                                      ),
+                                                                      fontSize:
+                                                                          13,
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
                                                     ),
+                                                    if (isMobile)
+                                                      const SizedBox(
+                                                        height: 24,
+                                                      ),
                                                     Row(
                                                       mainAxisSize:
                                                           MainAxisSize.min,
+                                                      mainAxisAlignment:
+                                                          isMobile
+                                                          ? MainAxisAlignment
+                                                                .end
+                                                          : MainAxisAlignment
+                                                                .start,
                                                       children: [
                                                         IconButton(
                                                           icon: Container(
@@ -2381,7 +2822,7 @@ class _AdminScreenState extends State<AdminScreen>
                                                                     );
                                                                 _loadProducts();
                                                               } catch (e) {
-                                                                if (mounted)
+                                                                if (mounted) {
                                                                   ScaffoldMessenger.of(
                                                                     context,
                                                                   ).showSnackBar(
@@ -2391,6 +2832,7 @@ class _AdminScreenState extends State<AdminScreen>
                                                                       ),
                                                                     ),
                                                                   );
+                                                                }
                                                               }
                                                             }
                                                           },
@@ -2422,7 +2864,12 @@ class _AdminScreenState extends State<AdminScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: InkWell(
-        onTap: () => setState(() => _currentTab = tab),
+        onTap: () {
+          setState(() => _currentTab = tab);
+          if (MediaQuery.of(context).size.width < 768) {
+            Navigator.pop(context); // Close drawer on mobile
+          }
+        },
         borderRadius: BorderRadius.circular(20),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),

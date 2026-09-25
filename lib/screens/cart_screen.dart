@@ -49,6 +49,32 @@ class _CartScreenState extends State<CartScreen> {
     ),
   ];
 
+  List<BoxShadow> get _clayHoverShadow => [
+    BoxShadow(
+      color: const Color(0xFFA096B4).withOpacity(0.3),
+      blurRadius: 40,
+      offset: const Offset(20, 20),
+    ),
+    const BoxShadow(
+      color: Colors.white,
+      blurRadius: 30,
+      offset: Offset(-12, -12),
+    ),
+  ];
+
+  List<BoxShadow> get _clayButtonShadow => [
+    BoxShadow(
+      color: _primaryViolet.withOpacity(0.4),
+      blurRadius: 24,
+      offset: const Offset(12, 12),
+    ),
+    BoxShadow(
+      color: Colors.white.withOpacity(0.5),
+      blurRadius: 16,
+      offset: const Offset(-8, -8),
+    ),
+  ];
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -68,7 +94,6 @@ class _CartScreenState extends State<CartScreen> {
   void _applyCoupon(CartProvider cart) {
     final code = _couponController.text.trim();
     if (code.isEmpty) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -266,12 +291,14 @@ class _CartScreenState extends State<CartScreen> {
       final itemSummary = items
           .map((i) => '${i.productName} (${i.priceType}) x${i.quantity}')
           .join('\n');
+
       final message =
           'New Order!\nRef: ${order.referenceId}\n\nItems:\n$itemSummary\n\nTotal: ₱${total.toStringAsFixed(2)}\n\nCustomer: ${order.customerName}\nAddress: ${order.customerAddress}';
       final messengerUrl =
           'https://m.me/ruviejoy.tolentino?text=${Uri.encodeComponent(message)}';
 
       cartProvider.clearCart();
+
       if (!mounted) return;
 
       // SHOW SUCCESS RECEIPT DIALOG (Claymorphism style)
@@ -334,7 +361,6 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         const SizedBox(height: 40),
-
                         Row(
                           children: List.generate(
                             30,
@@ -349,7 +375,6 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-
                         ...items.map(
                           (item) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -397,7 +422,6 @@ class _CartScreenState extends State<CartScreen> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 24),
                         Row(
                           children: List.generate(
@@ -413,7 +437,6 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                         const SizedBox(height: 32),
-
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -438,7 +461,6 @@ class _CartScreenState extends State<CartScreen> {
                           ],
                         ),
                         const SizedBox(height: 48),
-
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 20,
@@ -468,62 +490,69 @@ class _CartScreenState extends State<CartScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(height: 32),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.pop(context);
+                                context.go('/');
+                              },
+                              child: Container(
+                                height: 64,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 40,
+                                ),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: _clayCardShadow,
+                                ),
+                                child: Text(
+                                  'Back to Home',
+                                  style: GoogleFonts.nunito(
+                                    color: _darkText,
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 24),
+                            Expanded(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 300,
+                                ),
+                                child: ClaySquishButton(
+                                  label: "Send to Messenger",
+                                  primaryColor: const Color(0xFF0084FF),
+                                  icon: Icons.send_rounded,
+                                  onPressed: () async {
+                                    Navigator.pop(context);
+                                    context.go('/');
+                                    if (await canLaunchUrl(
+                                      Uri.parse(messengerUrl),
+                                    )) {
+                                      await launchUrl(Uri.parse(messengerUrl));
+                                    }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                          context.go('/');
-                        },
-                        child: Container(
-                          height: 64,
-                          padding: const EdgeInsets.symmetric(horizontal: 40),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: _clayCardShadow,
-                          ),
-                          child: Text(
-                            'Back to Home',
-                            style: GoogleFonts.nunito(
-                              color: _darkText,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 300),
-                          child: ClaySquishButton(
-                            label: "Send to Messenger",
-                            primaryColor: const Color(0xFF0084FF),
-                            icon: Icons.send_rounded,
-                            onPressed: () async {
-                              Navigator.pop(context);
-                              context.go('/');
-                              if (await canLaunchUrl(Uri.parse(messengerUrl)))
-                                await launchUrl(Uri.parse(messengerUrl));
-                            },
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
-      );
+      ); // FIXED: Dito natin inayos yung sobrang bracket.
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -817,46 +846,200 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 100),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          vertical: 60,
-                          horizontal: isMobile ? 24 : 80,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(60),
-                          ),
-                          boxShadow: _clayCardShadow,
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              "VN BRIGADE GROCERIES © 2026.",
-                              style: GoogleFonts.nunito(
-                                color: _darkText,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 18,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "Premium Claymorphism Experience",
-                              style: GoogleFonts.dmSans(
-                                color: _mutedText,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 80),
+
+                      // --- ADDED PROFESSIONAL CLAYMORPHISM FOOTER ---
+                      _buildProfessionalFooter(isMobile),
                     ],
                   ),
                 ),
         ],
       ),
+    );
+  }
+
+  // PROFESSIONAL FOOTER WIDGET
+  Widget _buildProfessionalFooter(bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 40 : 60,
+        horizontal: isMobile ? 24 : 80,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(48)),
+        boxShadow: _clayCardShadow,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1400),
+        child: Flex(
+          direction: isMobile ? Axis.vertical : Axis.horizontal,
+          crossAxisAlignment: isMobile
+              ? CrossAxisAlignment.center
+              : CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // BRANDING COLUMN
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Column(
+                crossAxisAlignment: isMobile
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w900,
+                        fontSize: isMobile ? 24 : 32,
+                        letterSpacing: -1,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'VN BRIGADE\n',
+                          style: TextStyle(color: _darkText),
+                        ),
+                        TextSpan(
+                          text: 'GROCERIES ',
+                          style: TextStyle(color: _primaryViolet),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Your premium destination for fresh, high-quality daily essentials. Serving the community with care and excellence.",
+                    textAlign: isMobile ? TextAlign.center : TextAlign.left,
+                    style: GoogleFonts.dmSans(
+                      color: _mutedText,
+                      fontSize: 15,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: isMobile
+                        ? MainAxisAlignment.center
+                        : MainAxisAlignment.start,
+                    children: [
+                      _buildSocialIcon(Icons.facebook_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.camera_alt_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.send_rounded),
+                    ],
+                  ),
+                  if (isMobile) const SizedBox(height: 40),
+                ],
+              ),
+            ),
+
+            if (!isMobile) const SizedBox(width: 60),
+
+            // CONTACT US COLUMN
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Container(
+                padding: EdgeInsets.all(isMobile ? 24 : 32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAE5F0), // Recessed clay look
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.03),
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: isMobile
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Contact Us",
+                      style: GoogleFonts.nunito(
+                        color: _darkText,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildContactRow(Icons.phone_rounded, "09765590309"),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.location_on_rounded,
+                      "Dasmariñas, Cavite, PH",
+                    ),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.email_rounded,
+                      "support@vnbrigade.com",
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialIcon(IconData icon) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFA096B4).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(4, 4),
+          ),
+          const BoxShadow(
+            color: Colors.white,
+            blurRadius: 12,
+            offset: Offset(-4, -4),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: _primaryViolet, size: 20),
+    );
+  }
+
+  Widget _buildContactRow(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(2, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _primaryViolet, size: 16),
+        ),
+        const SizedBox(width: 16),
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.dmSans(
+              color: _darkText,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1045,9 +1228,7 @@ class _CartScreenState extends State<CartScreen> {
             },
           ),
         ),
-
         const SizedBox(height: 64),
-
         Text(
           "Delivery Details",
           style: GoogleFonts.nunito(
@@ -1178,9 +1359,7 @@ class _CartScreenState extends State<CartScreen> {
             ],
           ),
         ),
-
         const SizedBox(height: 40),
-
         Container(
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
@@ -1201,7 +1380,6 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1240,7 +1418,6 @@ class _CartScreenState extends State<CartScreen> {
               const SizedBox(height: 32),
               Divider(height: 2, color: Colors.grey.shade200, thickness: 2),
               const SizedBox(height: 32),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -1264,7 +1441,6 @@ class _CartScreenState extends State<CartScreen> {
                 ],
               ),
               const SizedBox(height: 48),
-
               InkWell(
                 onTap: _showQRDialog,
                 borderRadius: BorderRadius.circular(24),
@@ -1310,9 +1486,7 @@ class _CartScreenState extends State<CartScreen> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 40),
-
               ClaySquishButton(
                 label: "Place Order",
                 primaryColor: _primaryViolet,
@@ -1428,4 +1602,3 @@ class _ClaySquishButtonState extends State<ClaySquishButton> {
     );
   }
 }
-  

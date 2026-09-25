@@ -128,18 +128,14 @@ class _CatalogScreenState extends State<CatalogScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) {
-          // TINANGGAL ANG AUTO-CHECKER DITO PARA HINDI MAG-CONFLICT SA BUTTONS
-
           final bool isRetail = selectedPriceType == 'retail';
           final screenWidth = MediaQuery.of(context).size.width;
           final isMobile = screenWidth < 600;
 
-          // CURRENT PRICE: Kung Retail = 168. Kung Wholesale = 2016 (Price per bundle).
+          // TUNAY NA LOGIC: Price per piece or bundle na in-input ni admin imu-multiply sa quantity
           final double currentPrice = isRetail
               ? product.retailPrice
               : product.wholesalePrice;
-
-          // TOTAL PRICE: currentPrice * quantity (Pwedeng 1 piece o 1 bundle pataas)
           final double totalPrice = currentPrice * quantity;
           final double displayPrice = currentPrice;
 
@@ -540,7 +536,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                           quantity--;
                                         } else if (quantity == 1 &&
                                             selectedPriceType == 'wholesale') {
-                                          // KUNG MINUS 1 SA WHOLESALE BUNDLE, BALIK SA 11 RETAIL
                                           selectedPriceType = 'retail';
                                           quantity = 11;
                                         }
@@ -571,7 +566,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                     ),
                                     onPressed: () {
                                       setModalState(() {
-                                        // KUNG RETAIL AT NAGING 12 NA, AUTO-SWITCH SA WHOLESALE BUNDLE (Qty=1)
                                         if (selectedPriceType == 'retail' &&
                                             quantity == 11) {
                                           selectedPriceType = 'wholesale';
@@ -648,7 +642,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                       SizedBox(width: isMobile ? 6 : 12),
                                       Flexible(
                                         child: Text(
-                                          "Add - ₱${totalPrice.toStringAsFixed(0)}",
+                                          "Add - ₱${totalPrice.toStringAsFixed(2)}",
                                           overflow: TextOverflow.ellipsis,
                                           style: GoogleFonts.nunito(
                                             color: Colors.white,
@@ -782,7 +776,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
     final cartProvider = Provider.of<CartProvider>(context);
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // RESPONSIVE BREAKPOINTS
     final isMobile = screenWidth < 768;
 
     final filteredProducts = _products.where((product) {
@@ -882,7 +875,6 @@ class _CatalogScreenState extends State<CatalogScreen> {
                                             const NeverScrollableScrollPhysics(),
                                         gridDelegate:
                                             SliverGridDelegateWithFixedCrossAxisCount(
-                                              // RESPONSIVE GRID COLUMNS
                                               crossAxisCount: screenWidth < 1100
                                                   ? 2
                                                   : 4,
@@ -947,42 +939,9 @@ class _CatalogScreenState extends State<CatalogScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 100),
+                          const SizedBox(height: 80),
 
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.symmetric(
-                              vertical: 40,
-                              horizontal: isMobile ? 24 : 80,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(40),
-                              ),
-                              boxShadow: _clayCardShadow,
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  "VN BRIGADE GROCERIES © 2026.",
-                                  style: GoogleFonts.nunito(
-                                    color: _darkText,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: isMobile ? 14 : 18,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  "Premium Claymorphism Experience",
-                                  style: GoogleFonts.dmSans(
-                                    color: _mutedText,
-                                    fontSize: isMobile ? 12 : 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          _buildProfessionalFooter(isMobile),
                         ],
                       ),
                     ),
@@ -990,6 +949,191 @@ class _CatalogScreenState extends State<CatalogScreen> {
           ),
         );
       },
+    );
+  }
+
+  // PROFESSIONAL FOOTER WIDGET
+  Widget _buildProfessionalFooter(bool isMobile) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        vertical: isMobile ? 40 : 60,
+        horizontal: isMobile ? 24 : 80,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(48), // Premium heavily rounded top
+        ),
+        boxShadow: _clayCardShadow,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1400),
+        child: Flex(
+          direction: isMobile ? Axis.vertical : Axis.horizontal,
+          crossAxisAlignment: isMobile
+              ? CrossAxisAlignment.center
+              : CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Column(
+                crossAxisAlignment: isMobile
+                    ? CrossAxisAlignment.center
+                    : CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w900,
+                        fontSize: isMobile ? 24 : 32,
+                        letterSpacing: -1,
+                      ),
+                      children: [
+                        TextSpan(
+                          text: 'VN BRIGADE\n',
+                          style: TextStyle(color: _darkText),
+                        ),
+                        TextSpan(
+                          text: 'GROCERIES ',
+                          style: TextStyle(color: _primaryViolet),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Your premium destination for fresh, high-quality daily essentials. Serving the community with care and excellence.",
+                    textAlign: isMobile ? TextAlign.center : TextAlign.left,
+                    style: GoogleFonts.dmSans(
+                      color: _mutedText,
+                      fontSize: 15,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: isMobile
+                        ? MainAxisAlignment.center
+                        : MainAxisAlignment.start,
+                    children: [
+                      _buildSocialIcon(Icons.facebook_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.camera_alt_rounded),
+                      const SizedBox(width: 16),
+                      _buildSocialIcon(Icons.send_rounded),
+                    ],
+                  ),
+                  if (isMobile) const SizedBox(height: 40),
+                ],
+              ),
+            ),
+
+            if (!isMobile) const SizedBox(width: 60),
+
+            Expanded(
+              flex: isMobile ? 0 : 1,
+              child: Container(
+                padding: EdgeInsets.all(isMobile ? 24 : 32),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAE5F0), // Recessed clay look
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(
+                    color: Colors.black.withOpacity(0.03),
+                    width: 2,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: isMobile
+                      ? CrossAxisAlignment.center
+                      : CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Contact Us",
+                      style: GoogleFonts.nunito(
+                        color: _darkText,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildContactRow(Icons.phone_rounded, "09765590309"),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.location_on_rounded,
+                      "Dasmariñas, Cavite, PH",
+                    ),
+                    const SizedBox(height: 16),
+                    _buildContactRow(
+                      Icons.email_rounded,
+                      "support@vnbrigade.com",
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSocialIcon(IconData icon) {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFA096B4).withOpacity(0.3),
+            blurRadius: 16,
+            offset: const Offset(4, 4),
+          ),
+          const BoxShadow(
+            color: Colors.white,
+            blurRadius: 12,
+            offset: Offset(-4, -4),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: _primaryViolet, size: 20),
+    );
+  }
+
+  Widget _buildContactRow(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(2, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: _primaryViolet, size: 16),
+        ),
+        const SizedBox(width: 16),
+        Flexible(
+          child: Text(
+            text,
+            style: GoogleFonts.dmSans(
+              color: _darkText,
+              fontWeight: FontWeight.bold,
+              fontSize: 15,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1451,7 +1595,7 @@ class _ClayProductCardState extends State<ClayProductCard> {
   }
 }
 
-// --- CLAYMORPHISM HERO SLIDESHOW ---
+// --- CLAYMORPHISM HERO SLIDESHOW WITH 3D ORB ICONS ---
 class PremiumHeroSlideshow extends StatefulWidget {
   final double screenWidth;
   final Color primaryColor;
@@ -1486,6 +1630,7 @@ class _PremiumHeroSlideshowState extends State<PremiumHeroSlideshow> {
             'Experience the finest selection of daily essentials with VN Brigade.',
         'colors': [widget.primaryColor, const Color(0xFF5A259A)],
         'icon': Icons.shopping_basket_rounded,
+        'orbColors': [const Color(0xFFA78BFA), const Color(0xFF5A259A)],
       },
       {
         'tag': 'Huge Discounts',
@@ -1493,6 +1638,7 @@ class _PremiumHeroSlideshowState extends State<PremiumHeroSlideshow> {
         'subtitle': 'Save more on your favorite brands every single day.',
         'colors': [widget.secondaryColor, const Color(0xFFFF9D42)],
         'icon': Icons.local_offer_rounded,
+        'orbColors': [const Color(0xFFF472B6), const Color(0xFFE11D48)],
       },
       {
         'tag': 'Premium Selection',
@@ -1500,6 +1646,7 @@ class _PremiumHeroSlideshowState extends State<PremiumHeroSlideshow> {
         'subtitle': 'Only the best quality products make it to our shelves.',
         'colors': [const Color(0xFF0EA5E9), const Color(0xFF0284C7)],
         'icon': Icons.verified_rounded,
+        'orbColors': [const Color(0xFF7DD3FC), const Color(0xFF0369A1)],
       },
     ];
 
@@ -1524,6 +1671,66 @@ class _PremiumHeroSlideshowState extends State<PremiumHeroSlideshow> {
     _timer?.cancel();
     _pageController.dispose();
     super.dispose();
+  }
+
+  Widget _build3DOrbIcon(
+    IconData icon,
+    List<Color> gradientColors,
+    double size,
+  ) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: gradientColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: size * 0.2,
+            offset: Offset(size * 0.1, size * 0.1),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.4),
+            blurRadius: size * 0.15,
+            offset: Offset(-size * 0.05, -size * 0.05),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: size * 0.1,
+            left: size * 0.15,
+            child: Container(
+              width: size * 0.4,
+              height: size * 0.2,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(size),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.4),
+                    blurRadius: size * 0.1,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Center(
+            child: Icon(
+              icon,
+              size: size * 0.45,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -1628,10 +1835,10 @@ class _PremiumHeroSlideshowState extends State<PremiumHeroSlideshow> {
                         if (!isMobile)
                           Expanded(
                             child: Center(
-                              child: Icon(
+                              child: _build3DOrbIcon(
                                 slide['icon'],
-                                size: isTablet ? 120 : 200,
-                                color: Colors.white.withOpacity(0.2),
+                                slide['orbColors'],
+                                isTablet ? 140 : 220,
                               ),
                             ),
                           ),
