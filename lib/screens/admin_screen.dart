@@ -292,7 +292,7 @@ class _AdminScreenState extends State<AdminScreen>
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.4),
-      builder: (context) => BackdropFilter(
+      builder: (BuildContext orderDialogContext) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: AlertDialog(
           shape: RoundedRectangleBorder(
@@ -334,7 +334,7 @@ class _AdminScreenState extends State<AdminScreen>
                     size: 20,
                   ),
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(orderDialogContext),
               ),
             ],
           ),
@@ -435,7 +435,8 @@ class _AdminScreenState extends State<AdminScreen>
                           headingRowColor: WidgetStateProperty.all(
                             Colors.grey.shade50,
                           ),
-                          dataRowMaxHeight: 80,
+                          dataRowMaxHeight: double.infinity,
+                          dataRowMinHeight: 60,
                           columns: [
                             DataColumn(
                               label: Text(
@@ -473,11 +474,16 @@ class _AdminScreenState extends State<AdminScreen>
                             return DataRow(
                               cells: [
                                 DataCell(
-                                  Text(
-                                    '${item.productName} (${item.priceType}) x${item.quantity}',
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8.0,
+                                    ),
+                                    child: Text(
+                                      '${item.productName} (${item.priceType}) x${item.quantity}',
+                                      style: GoogleFonts.dmSans(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -615,7 +621,7 @@ class _AdminScreenState extends State<AdminScreen>
               onPressed: () async {
                 final confirm = await showDialog<bool>(
                   context: context,
-                  builder: (context) => AlertDialog(
+                  builder: (BuildContext confirmCtx) => AlertDialog(
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(32),
                     ),
@@ -633,7 +639,7 @@ class _AdminScreenState extends State<AdminScreen>
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context, false),
+                        onPressed: () => Navigator.pop(confirmCtx, false),
                         child: Text(
                           'Cancel',
                           style: GoogleFonts.nunito(
@@ -654,7 +660,7 @@ class _AdminScreenState extends State<AdminScreen>
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                        onPressed: () => Navigator.pop(context, true),
+                        onPressed: () => Navigator.pop(confirmCtx, true),
                         child: Text(
                           'Delete',
                           style: GoogleFonts.nunito(
@@ -667,11 +673,47 @@ class _AdminScreenState extends State<AdminScreen>
                     ],
                   ),
                 );
+
                 if (confirm == true) {
-                  await _firebaseService.deleteOrder(order.id);
-                  if (mounted) {
-                    Navigator.pop(context);
-                    _loadOrders();
+                  try {
+                    await _firebaseService.deleteOrder(order.id);
+                    if (mounted) {
+                      Navigator.of(orderDialogContext).pop();
+                      _loadOrders();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Order deleted successfully!',
+                            style: GoogleFonts.dmSans(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          backgroundColor: const Color(0xFF10B981),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Failed to delete order: $e',
+                            style: GoogleFonts.dmSans(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          backgroundColor: Colors.redAccent,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      );
+                    }
                   }
                 }
               },
@@ -690,7 +732,7 @@ class _AdminScreenState extends State<AdminScreen>
               child: ClaySquishButton(
                 label: "Close",
                 primaryColor: _primaryViolet,
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(orderDialogContext).pop(),
               ),
             ),
           ],
@@ -762,7 +804,7 @@ class _AdminScreenState extends State<AdminScreen>
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.4),
-      builder: (context) => StatefulBuilder(
+      builder: (BuildContext productDialogContext) => StatefulBuilder(
         builder: (context, setDialogState) {
           return BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -772,14 +814,42 @@ class _AdminScreenState extends State<AdminScreen>
               ),
               surfaceTintColor: Colors.transparent,
               backgroundColor: Colors.white.withOpacity(0.95),
-              title: Text(
-                product == null ? 'Add New Product' : 'Edit Product',
-                style: GoogleFonts.nunito(
-                  fontWeight: FontWeight.w900,
-                  fontSize: isMobile ? 24 : 28,
-                  color: _darkText,
-                  letterSpacing: -0.5,
-                ),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      product == null ? 'Add New Product' : 'Edit Product',
+                      style: GoogleFonts.nunito(
+                        fontWeight: FontWeight.w900,
+                        fontSize: isMobile ? 24 : 28,
+                        color: _darkText,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        color: Colors.black87,
+                        size: 20,
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(productDialogContext),
+                  ),
+                ],
               ),
               content: SizedBox(
                 width: 700,
@@ -984,7 +1054,7 @@ class _AdminScreenState extends State<AdminScreen>
               actionsPadding: EdgeInsets.all(isMobile ? 24 : 40),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => Navigator.of(productDialogContext).pop(),
                   child: Text(
                     'Cancel',
                     style: GoogleFonts.nunito(
@@ -1056,7 +1126,7 @@ class _AdminScreenState extends State<AdminScreen>
                         }
 
                         if (mounted) {
-                          Navigator.of(context).pop();
+                          Navigator.of(productDialogContext).pop();
                           _loadProducts();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -1403,8 +1473,6 @@ class _AdminScreenState extends State<AdminScreen>
           ),
           const SizedBox(height: 32),
           Container(
-            height: isMobile ? double.infinity : 400,
-            constraints: isMobile ? const BoxConstraints(maxHeight: 600) : null,
             padding: EdgeInsets.all(isMobile ? 24 : 40),
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.85),
@@ -1413,26 +1481,28 @@ class _AdminScreenState extends State<AdminScreen>
             ),
             child: categorySales.isEmpty
                 ? Center(
-                    child: Text(
-                      "No Sales Data Yet",
-                      style: GoogleFonts.dmSans(
-                        color: _mutedText,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40.0),
+                      child: Text(
+                        "No Sales Data Yet",
+                        style: GoogleFonts.dmSans(
+                          color: _mutedText,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   )
                 : Flex(
                     direction: isMobile ? Axis.vertical : Axis.horizontal,
                     children: [
-                      Expanded(
-                        flex: isMobile ? 0 : 1,
-                        child: SizedBox(
-                          height: isMobile ? 250 : double.infinity,
+                      if (isMobile)
+                        SizedBox(
+                          height: 250,
                           child: PieChart(
                             PieChartData(
                               sectionsSpace: 6,
-                              centerSpaceRadius: isMobile ? 50 : 80,
+                              centerSpaceRadius: 50,
                               sections: categorySales.entries.map((e) {
                                 final isLarge = e.value > 500;
                                 int index = categorySales.keys.toList().indexOf(
@@ -1442,23 +1512,38 @@ class _AdminScreenState extends State<AdminScreen>
                                   color: pieColors[index % pieColors.length],
                                   value: e.value,
                                   title: '',
-                                  radius: isLarge
-                                      ? (isMobile ? 60 : 90)
-                                      : (isMobile ? 50 : 80),
+                                  radius: isLarge ? 60 : 50,
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        )
+                      else
+                        Expanded(
+                          child: PieChart(
+                            PieChartData(
+                              sectionsSpace: 6,
+                              centerSpaceRadius: 80,
+                              sections: categorySales.entries.map((e) {
+                                final isLarge = e.value > 500;
+                                int index = categorySales.keys.toList().indexOf(
+                                  e.key,
+                                );
+                                return PieChartSectionData(
+                                  color: pieColors[index % pieColors.length],
+                                  value: e.value,
+                                  title: '',
+                                  radius: isLarge ? 90 : 80,
                                 );
                               }).toList(),
                             ),
                           ),
                         ),
-                      ),
                       if (isMobile) const SizedBox(height: 32),
-                      Expanded(
-                        flex: isMobile ? 0 : 1,
-                        child: ListView(
+                      if (isMobile)
+                        ListView(
                           shrinkWrap: true,
-                          physics: isMobile
-                              ? const NeverScrollableScrollPhysics()
-                              : null,
+                          physics: const NeverScrollableScrollPhysics(),
                           children: categorySales.entries.map((e) {
                             int index = categorySales.keys.toList().indexOf(
                               e.key,
@@ -1511,8 +1596,65 @@ class _AdminScreenState extends State<AdminScreen>
                               ),
                             );
                           }).toList(),
+                        )
+                      else
+                        Expanded(
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: categorySales.entries.map((e) {
+                              int index = categorySales.keys.toList().indexOf(
+                                e.key,
+                              );
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 12.0,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            pieColors[index % pieColors.length],
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color:
+                                                pieColors[index %
+                                                        pieColors.length]
+                                                    .withOpacity(0.4),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Text(
+                                        e.key,
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 16,
+                                          color: _darkText,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      '₱${e.value.toStringAsFixed(0)}',
+                                      style: GoogleFonts.nunito(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        color: _darkText,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                      ),
                     ],
                   ),
           ),
@@ -1873,7 +2015,6 @@ class _AdminScreenState extends State<AdminScreen>
 
     return Scaffold(
       backgroundColor: _canvas,
-      // SA MOBILE, GAMIT TAYO NG DRAWER AT APPBAR. SA DESKTOP, ROW GAYA NG DATI.
       appBar: isMobile
           ? AppBar(
               backgroundColor: Colors.white.withOpacity(0.8),
@@ -1971,7 +2112,6 @@ class _AdminScreenState extends State<AdminScreen>
           : null,
       body: Row(
         children: [
-          // --- DESKTOP SAAS SIDEBAR
           if (!isMobile)
             Container(
               width: 320,
@@ -2057,7 +2197,6 @@ class _AdminScreenState extends State<AdminScreen>
               ),
             ),
 
-          // --- MAIN CONTENT AREA
           Expanded(
             child: Column(
               children: [
@@ -2730,87 +2869,85 @@ class _AdminScreenState extends State<AdminScreen>
                                                           onPressed: () async {
                                                             final confirm = await showDialog<bool>(
                                                               context: context,
-                                                              builder: (context) => AlertDialog(
-                                                                shape: RoundedRectangleBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius.circular(
-                                                                        32,
-                                                                      ),
-                                                                ),
-                                                                title: Text(
-                                                                  'Delete Product',
-                                                                  style: GoogleFonts.nunito(
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .w900,
-                                                                    fontSize:
-                                                                        24,
-                                                                  ),
-                                                                ),
-                                                                content: Text(
-                                                                  'Delete ${product.name}?',
-                                                                  style:
-                                                                      GoogleFonts.dmSans(
-                                                                        fontSize:
-                                                                            16,
-                                                                      ),
-                                                                ),
-                                                                actions: [
-                                                                  TextButton(
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                          context,
-                                                                          false,
-                                                                        ),
-                                                                    child: Text(
-                                                                      'Cancel',
-                                                                      style: GoogleFonts.nunito(
-                                                                        fontWeight:
-                                                                            FontWeight.bold,
-                                                                        color:
-                                                                            _mutedText,
-                                                                        fontSize:
-                                                                            16,
-                                                                      ),
+                                                              builder:
+                                                                  (
+                                                                    BuildContext
+                                                                    confirmContext,
+                                                                  ) => AlertDialog(
+                                                                    shape: RoundedRectangleBorder(
+                                                                      borderRadius:
+                                                                          BorderRadius.circular(
+                                                                            32,
+                                                                          ),
                                                                     ),
-                                                                  ),
-                                                                  ElevatedButton(
-                                                                    style: ElevatedButton.styleFrom(
-                                                                      backgroundColor:
-                                                                          Colors
-                                                                              .redAccent,
-                                                                      padding: const EdgeInsets.symmetric(
-                                                                        horizontal:
-                                                                            24,
-                                                                        vertical:
-                                                                            16,
-                                                                      ),
-                                                                      shape: RoundedRectangleBorder(
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(
-                                                                              16,
-                                                                            ),
-                                                                      ),
-                                                                    ),
-                                                                    onPressed: () =>
-                                                                        Navigator.pop(
-                                                                          context,
-                                                                          true,
-                                                                        ),
-                                                                    child: Text(
-                                                                      'Delete',
+                                                                    title: Text(
+                                                                      'Delete Product',
                                                                       style: GoogleFonts.nunito(
-                                                                        color: Colors
-                                                                            .white,
                                                                         fontWeight:
                                                                             FontWeight.w900,
                                                                         fontSize:
+                                                                            24,
+                                                                      ),
+                                                                    ),
+                                                                    content: Text(
+                                                                      'Delete ${product.name}?',
+                                                                      style: GoogleFonts.dmSans(
+                                                                        fontSize:
                                                                             16,
                                                                       ),
                                                                     ),
+                                                                    actions: [
+                                                                      TextButton(
+                                                                        onPressed: () => Navigator.pop(
+                                                                          confirmContext,
+                                                                          false,
+                                                                        ),
+                                                                        child: Text(
+                                                                          'Cancel',
+                                                                          style: GoogleFonts.nunito(
+                                                                            fontWeight:
+                                                                                FontWeight.bold,
+                                                                            color:
+                                                                                _mutedText,
+                                                                            fontSize:
+                                                                                16,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                      ElevatedButton(
+                                                                        style: ElevatedButton.styleFrom(
+                                                                          backgroundColor:
+                                                                              Colors.redAccent,
+                                                                          padding: const EdgeInsets.symmetric(
+                                                                            horizontal:
+                                                                                24,
+                                                                            vertical:
+                                                                                16,
+                                                                          ),
+                                                                          shape: RoundedRectangleBorder(
+                                                                            borderRadius: BorderRadius.circular(
+                                                                              16,
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        onPressed: () => Navigator.pop(
+                                                                          confirmContext,
+                                                                          true,
+                                                                        ),
+                                                                        child: Text(
+                                                                          'Delete',
+                                                                          style: GoogleFonts.nunito(
+                                                                            color:
+                                                                                Colors.white,
+                                                                            fontWeight:
+                                                                                FontWeight.w900,
+                                                                            fontSize:
+                                                                                16,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ],
                                                                   ),
-                                                                ],
-                                                              ),
                                                             );
                                                             if (confirm ==
                                                                 true) {
@@ -2821,6 +2958,21 @@ class _AdminScreenState extends State<AdminScreen>
                                                                           .id,
                                                                     );
                                                                 _loadProducts();
+                                                                if (mounted) {
+                                                                  ScaffoldMessenger.of(
+                                                                    context,
+                                                                  ).showSnackBar(
+                                                                    SnackBar(
+                                                                      content: Text(
+                                                                        'Product deleted successfully!',
+                                                                      ),
+                                                                      backgroundColor:
+                                                                          const Color(
+                                                                            0xFF10B981,
+                                                                          ),
+                                                                    ),
+                                                                  );
+                                                                }
                                                               } catch (e) {
                                                                 if (mounted) {
                                                                   ScaffoldMessenger.of(
@@ -2830,6 +2982,9 @@ class _AdminScreenState extends State<AdminScreen>
                                                                       content: Text(
                                                                         'Error: $e',
                                                                       ),
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .red,
                                                                     ),
                                                                   );
                                                                 }
