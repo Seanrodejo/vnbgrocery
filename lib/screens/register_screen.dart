@@ -16,8 +16,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
-  bool _isLoading = false;
 
+  bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
@@ -81,6 +81,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     setState(() => _isLoading = true);
+
     try {
       await _authService.signUp(
         _emailController.text.trim(),
@@ -119,6 +120,121 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showTermsDialog() {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.4),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            width: 600,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(40),
+              boxShadow: _clayCardShadow,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "Terms and Conditions",
+                        style: GoogleFonts.nunito(
+                          fontWeight: FontWeight.w900,
+                          fontSize: isMobile ? 24 : 28,
+                          color: _darkText,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.black87,
+                          size: 20,
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF4F1FA),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.black.withOpacity(0.03),
+                          width: 2,
+                        ),
+                      ),
+                      child: Text(
+                        "Welcome to VN Brigade Groceries.\n\n"
+                        "1. Acceptance of Terms\nBy creating an account, you agree to abide by these Terms and Conditions. If you do not agree with any part of these terms, you must not use our service.\n\n"
+                        "2. User Accounts\nYou are responsible for safeguarding your password and for all activities that occur under your account. You agree to notify us immediately of any unauthorized use of your account.\n\n"
+                        "3. Orders and Pricing\nAll orders are subject to availability and confirmation of the order price. The wholesale pricing (12+ items) will automatically apply at checkout if the conditions are met.\n\n"
+                        "4. Payment and Fulfillment\nPayments made via GCash must be verified by the admin through Messenger. Order fulfillment processes include packing and dispatching, which will be updated via your live tracker.\n\n"
+                        "5. Privacy Policy\nWe collect and use your personal information solely for the purpose of fulfilling your grocery orders. Your data will not be shared with third parties without your consent.\n\n"
+                        "6. Modification of Terms\nVN Brigade reserves the right to modify these terms at any time. Changes will be effective immediately upon posting to the application.",
+                        style: GoogleFonts.dmSans(
+                          fontSize: 15,
+                          color: _mutedText,
+                          height: 1.6,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ClaySquishButton(
+                    label: "I Understand",
+                    primaryColor: _primaryViolet,
+                    onPressed: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _acceptTerms = true;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -163,24 +279,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           // --- MAIN REGISTER CARD ---
           Center(
-            child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 800),
-              curve: Curves.easeOutCubic,
-              builder: (context, value, child) {
-                return Transform.translate(
-                  offset: Offset(0, 50 * (1 - value)),
-                  child: Opacity(opacity: value, child: child),
-                );
-              },
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: SingleChildScrollView(
+            // FIXED: Binalot sa SingleChildScrollView para hindi mag-overflow
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutCubic,
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, 50 * (1 - value)),
+                    child: Opacity(opacity: value, child: child),
+                  );
+                },
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480),
                   child: Container(
-                    margin: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 24 : 0,
-                      vertical: 40,
-                    ),
+                    margin: EdgeInsets.symmetric(horizontal: isMobile ? 24 : 0),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.85),
                       borderRadius: BorderRadius.circular(48), // Super rounded
@@ -408,12 +523,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
-                                    child: Text(
-                                      "I accept the Terms & Conditions and Privacy Policy.",
-                                      style: GoogleFonts.dmSans(
-                                        color: _darkText,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                    child: GestureDetector(
+                                      onTap: _showTermsDialog,
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: GoogleFonts.dmSans(
+                                            color: _darkText,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          children: [
+                                            const TextSpan(
+                                              text: "I accept the ",
+                                            ),
+                                            TextSpan(
+                                              text:
+                                                  "Terms & Conditions and Privacy Policy.",
+                                              style: TextStyle(
+                                                color: _primaryViolet,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -427,6 +560,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 primaryColor: _primaryViolet,
                                 isLoading: _isLoading,
                                 onPressed: _register,
+                              ),
+                              const SizedBox(height: 32),
+
+                              // GUEST BUTTON
+                              ClaySquishButton(
+                                label: "Continue as Guest",
+                                primaryColor: _secondaryOrange,
+                                icon: Icons.person_outline_rounded,
+                                onPressed: () => context.go('/'),
                               ),
                               const SizedBox(height: 32),
 

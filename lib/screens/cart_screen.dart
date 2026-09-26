@@ -304,6 +304,8 @@ class _CartScreenState extends State<CartScreen> {
 
       if (!mounted) return;
 
+      final isMobile = MediaQuery.of(context).size.width < 600;
+
       // SHOW SUCCESS RECEIPT DIALOG (Claymorphism style)
       showDialog(
         context: context,
@@ -321,9 +323,9 @@ class _CartScreenState extends State<CartScreen> {
                   Container(
                     width: double.infinity,
                     constraints: const BoxConstraints(maxWidth: 480),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 48,
-                      vertical: 56,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 24 : 48,
+                      vertical: isMobile ? 32 : 56,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.95),
@@ -347,9 +349,10 @@ class _CartScreenState extends State<CartScreen> {
                         const SizedBox(height: 32),
                         Text(
                           "ORDER CONFIRMED",
+                          textAlign: TextAlign.center,
                           style: GoogleFonts.nunito(
                             fontWeight: FontWeight.w900,
-                            fontSize: 28,
+                            fontSize: isMobile ? 24 : 28,
                             color: _darkText,
                             letterSpacing: -0.5,
                           ),
@@ -482,21 +485,43 @@ class _CartScreenState extends State<CartScreen> {
                                 color: _secondaryOrange,
                               ),
                               const SizedBox(width: 12),
-                              Text(
-                                "Please take a screenshot of this receipt",
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 13,
-                                  color: _secondaryOrange,
-                                  fontWeight: FontWeight.bold,
+                              Flexible(
+                                child: Text(
+                                  "Please take a screenshot of this receipt",
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 13,
+                                    color: _secondaryOrange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 32),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+
+                        // NA-FIX NA OVERFLOW: Laging naka-stack na ang mga buttons
+                        Column(
                           children: [
+                            SizedBox(
+                              width: double.infinity,
+                              child: ClaySquishButton(
+                                label: "Send to Messenger",
+                                primaryColor: const Color(0xFF0084FF),
+                                icon: Icons.send_rounded,
+                                onPressed: () async {
+                                  if (await canLaunchUrl(
+                                    Uri.parse(messengerUrl),
+                                  )) {
+                                    await launchUrl(
+                                      Uri.parse(messengerUrl),
+                                      mode: LaunchMode.externalApplication,
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 16),
                             GestureDetector(
                               onTap: () {
                                 Navigator.pop(context);
@@ -504,9 +529,7 @@ class _CartScreenState extends State<CartScreen> {
                               },
                               child: Container(
                                 height: 64,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 40,
-                                ),
+                                width: double.infinity,
                                 alignment: Alignment.center,
                                 decoration: BoxDecoration(
                                   color: Colors.white,
@@ -520,28 +543,6 @@ class _CartScreenState extends State<CartScreen> {
                                     fontWeight: FontWeight.w900,
                                     fontSize: 16,
                                   ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 24),
-                            Expanded(
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 300,
-                                ),
-                                child: ClaySquishButton(
-                                  label: "Send to Messenger",
-                                  primaryColor: const Color(0xFF0084FF),
-                                  icon: Icons.send_rounded,
-                                  onPressed: () async {
-                                    Navigator.pop(context);
-                                    context.go('/');
-                                    if (await canLaunchUrl(
-                                      Uri.parse(messengerUrl),
-                                    )) {
-                                      await launchUrl(Uri.parse(messengerUrl));
-                                    }
-                                  },
                                 ),
                               ),
                             ),
